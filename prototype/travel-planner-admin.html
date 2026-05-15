@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅行策划 — 账号管理</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAFA;
+  --surface:#FFFFFF;
+  --fg:#1A1A1A;
+  --muted:#71717A;
+  --muted-light:#A1A1AA;
+  --border:#E4E4E7;
+  --border-light:#F0F0F2;
+  --accent:#0500FF;
+  --accent-hover:#0400D6;
+  --accent-subtle:#EEEEFF;
+  --accent-glow:rgba(5,0,255,0.08);
+  --success:#16A34A;
+  --success-subtle:#DCFCE7;
+  --danger:#DC2626;
+  --danger-subtle:#FEE2E2;
+  --warn:#CA8A04;
+  --warn-subtle:#FEF9C3;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+  --font-display:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+  --font-mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --radius:10px;
+  --radius-lg:14px;
+  --radius-xl:18px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 14px rgba(0,0,0,0.06);
+  --shadow-lg:0 8px 30px rgba(0,0,0,0.10);
+}
+html{font-size:14px}
+body{
+  font-family:var(--font-body);color:var(--fg);background:var(--bg);
+  min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.55;
+  background-image:radial-gradient(circle,oklch(80% 0.008 265 / 25%) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.header{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 32px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+}
+.header-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;letter-spacing:-0.02em}
+.header-brand svg{flex-shrink:0}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.header-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-subtle);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
+.header-sep{width:1px;height:20px;background:var(--border)}
+.header-link{font-size:12.5px;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .12s}
+.header-link:hover{color:var(--fg);background:var(--border-light)}
+.main{max-width:1080px;margin:0 auto;padding:28px 24px 60px}
+.stats{display:flex;gap:12px;margin-bottom:24px}
+.stat-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:4px;letter-spacing:0.02em}
+.stat-value{font-size:24px;font-weight:700;letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
+.stat-value.accent{color:var(--accent)}.stat-value.success{color:var(--success)}.stat-value.warn{color:var(--warn)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.toolbar-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.toolbar-right{display:flex;align-items:center;gap:8px}
+.search-box{position:relative;flex:1;max-width:320px}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;transition:all .15s;background:var(--surface);color:var(--fg)}
+.search-box input::placeholder{color:var(--muted-light)}
+.search-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted-light);pointer-events:none}
+.filter-select{padding:8px 28px 8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;background:var(--surface) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717A' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;cursor:pointer;color:var(--fg);transition:all .15s}
+.filter-select:focus{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;font-family:var(--font-body);cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn svg{flex-shrink:0}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-primary:active{transform:scale(0.98)}
+.btn-outline{background:var(--surface);color:var(--fg);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--muted-light);box-shadow:var(--shadow-sm)}
+.btn-danger{background:var(--surface);color:var(--danger);border:1px solid var(--danger)}
+.btn-danger:hover{background:var(--danger-subtle)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:7px}
+.btn-icon{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all .12s}
+.btn-icon:hover{color:var(--fg);border-color:var(--muted-light)}
+.btn-icon.danger:hover{color:var(--danger);border-color:var(--danger)}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--border-light)}
+th{text-align:left;padding:10px 16px;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0.02em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover{background:oklch(98% 0.003 265)}
+.username-cell{font-weight:500;font-family:var(--font-mono);font-size:13px;letter-spacing:0.01em}
+.password-cell{font-family:var(--font-mono);font-size:12.5px;color:var(--muted)}
+.note-cell{color:var(--muted);font-size:12.5px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.date-cell{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500;letter-spacing:0.01em}
+.badge-active{background:var(--success-subtle);color:var(--success)}
+.badge-disabled{background:var(--border-light);color:var(--muted)}
+.badge-expired{background:var(--danger-subtle);color:var(--danger)}
+.badge-role{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500}
+.badge-role-admin{background:var(--accent-subtle);color:var(--accent)}
+.badge-role-user{background:var(--border-light);color:var(--muted)}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.actions{display:flex;gap:4px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:4px;letter-spacing:-0.01em}
+.modal-desc{font-size:13px;color:var(--muted);margin-bottom:20px}
+.modal-form{display:flex;flex-direction:column;gap:14px}
+.modal-field{display:flex;flex-direction:column;gap:5px}
+.modal-field label{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0.02em}
+.modal-field input,.modal-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;transition:all .15s;background:var(--surface);color:var(--fg)}
+.modal-field textarea{resize:vertical;min-height:60px}
+.modal-field input:focus,.modal-field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.import-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;transition:all .15s}
+.import-zone:hover,.import-zone.dragover{border-color:var(--accent);background:var(--accent-subtle)}
+.import-zone svg{margin-bottom:8px;color:var(--muted-light)}
+.import-zone p{font-size:13px;color:var(--muted)}
+.import-zone .hint{font-size:12px;color:var(--muted-light);margin-top:4px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;color:white;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.confirm-body{text-align:center;padding:8px 0 16px}
+.confirm-body svg{margin-bottom:12px}
+.confirm-body p{font-size:14px;color:var(--fg);margin-bottom:4px}
+.confirm-body .sub{font-size:12.5px;color:var(--muted)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-state svg{margin-bottom:12px;color:var(--muted-light)}
+.empty-state p{font-size:14px;margin-bottom:4px}
+.empty-state .hint{font-size:12.5px;color:var(--muted-light)}
+@media (max-width:768px){
+  .header{padding:0 16px}
+  .main{padding:20px 12px 48px}
+  .stats{flex-direction:column}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .toolbar-left{flex-direction:column}
+  .search-box{max-width:none}
+  .table-wrap{overflow-x:auto}
+  table{min-width:720px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-brand">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="7" fill="#EEEEFF" stroke="#0500FF" stroke-width="1.1"/><path d="M14 6C11.2 6 9 8.2 9 11c0 3.5 5 10 5 10s5-6.5 5-10c0-2.8-2.2-5-5-5z" fill="#0500FF" fill-opacity=".15" stroke="#0500FF" stroke-width="1.2" stroke-linejoin="round"/><circle cx="14" cy="11" r="2" fill="#0500FF" fill-opacity=".4" stroke="#0500FF" stroke-width="1"/></svg>
+    旅行策划 · 账号管理
+  </div>
+  <div class="header-right">
+    <a class="header-link" href="travel-planner-login.html">← 返回登录页</a>
+    <div class="header-sep"></div>
+    <div class="header-user"><div class="header-avatar">管</div>管理员</div>
+  </div>
+</div>
+<div class="main">
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">总账号</div><div class="stat-value accent" id="stat-total">5</div></div>
+    <div class="stat-card"><div class="stat-label">已启用</div><div class="stat-value success" id="stat-active">3</div></div>
+    <div class="stat-card"><div class="stat-label">已停用</div><div class="stat-value" id="stat-disabled" style="color:var(--muted)">1</div></div>
+    <div class="stat-card"><div class="stat-label">已过期</div><div class="stat-value warn" id="stat-expired">1</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.3"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        <input type="text" id="search-input" placeholder="搜索用户名或备注..." oninput="renderTable()">
+      </div>
+      <select class="filter-select" id="status-filter" onchange="renderTable()">
+        <option value="">全部状态</option><option value="active">已启用</option><option value="disabled">已停用</option><option value="expired">已过期</option>
+      </select>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn btn-outline" onclick="openImportModal()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2M8 2v9M5 8l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        批量导入
+      </button>
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        发行账号
+      </button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th style="width:44px">#</th><th>用户名</th><th>初始密码</th><th>权限</th><th>状态</th><th>到期时间</th><th>备注</th><th style="width:160px">操作</th></tr></thead>
+      <tbody id="accounts-body"></tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="10" stroke="currentColor" stroke-width="1.5"/><path d="M14 20h12M20 14v12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <p>暂无账号</p><span class="hint">点击「发行账号」创建第一个用户</span>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-create">
+  <div class="modal">
+    <div class="modal-title" id="modal-create-title">发行新账号</div>
+    <div class="modal-desc" id="modal-create-desc">填写以下信息为用户创建登录账号</div>
+    <form class="modal-form" id="form-create" onsubmit="handleCreateSubmit(event)">
+      <div class="modal-field"><label for="f-username">用户名 *</label><input type="text" id="f-username" placeholder="例如 zhangsan" required autocomplete="off"></div>
+      <div class="modal-field"><label for="f-password">初始密码 *</label><input type="text" id="f-password" placeholder="至少 6 位" required autocomplete="off"></div>
+      <div class="modal-field"><label for="f-role">权限 *</label><select class="filter-select" id="f-role" style="width:100%"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
+      <div class="modal-field"><label for="f-expire">到期时间</label><input type="date" id="f-expire"></div>
+      <div class="modal-field"><label for="f-note">备注</label><textarea id="f-note" placeholder="可选，例如：销售部张三、VIP客户等"></textarea></div>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal('modal-create')">取消</button><button type="submit" class="btn btn-primary" id="btn-create-submit">确认发行</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-title">批量导入账号</div>
+    <div class="modal-desc">上传 CSV 文件批量发行账号</div>
+    <div class="import-zone" id="import-zone" onclick="document.getElementById('import-file').click()">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M4 20v4a2 2 0 002 2h20a2 2 0 002-2v-4M16 4v14M10 12l6 6 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>点击或拖拽文件到此处上传</p>      <span class="hint">支持 CSV 格式：用户名,密码,权限,到期时间,备注（权限为 admin 或 user）</span>
+    </div>
+    <input type="file" id="import-file" accept=".csv" style="display:none" onchange="handleImportFile(this)">
+    <div id="import-preview" style="display:none;margin-top:16px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">预览（前 5 条）：</div>
+      <div id="import-preview-content" style="font-family:var(--font-mono);font-size:12px;background:var(--border-light);border-radius:8px;padding:10px 12px;max-height:120px;overflow:auto"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px"><button class="btn btn-outline" onclick="closeModal('modal-import')">取消</button><button class="btn btn-primary" id="btn-import-confirm" disabled onclick="confirmImport()">确认导入</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:380px">
+    <div class="confirm-body">
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#DC2626" stroke-width="1.5"/><path d="M20 12v10M20 26v1" stroke="#DC2626" stroke-width="2" stroke-linecap="round"/></svg>
+      <p id="confirm-title">确认删除？</p><span class="sub" id="confirm-desc">此操作不可撤销</span>
+    </div>
+    <div class="modal-actions" style="justify-content:center"><button class="btn btn-outline" onclick="closeModal('modal-confirm')">取消</button><button class="btn btn-danger" id="btn-confirm-action">删除</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">重置密码</div>
+    <div class="modal-desc" id="reset-desc">为该用户设置新密码</div>
+    <form class="modal-form" onsubmit="handleResetSubmit(event)">
+      <div class="modal-field"><label for="f-new-pw">新密码</label><input type="text" id="f-new-pw" placeholder="至少 6 位" required autocomplete="off"></div>
+      <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal('modal-reset')">取消</button><button type="submit" class="btn btn-primary">确认重置</button></div>
+    </form>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var accounts=[
+  {id:'acc-1',username:'zhangsan',password:'Zs@2024!',role:'admin',expire:'2026-12-31',note:'销售部',status:'active'},
+  {id:'acc-2',username:'lisi',password:'Ls#8888',role:'user',expire:'2026-08-15',note:'技术部',status:'active'},
+  {id:'acc-3',username:'wangwu',password:'Ww123456',role:'user',expire:'2025-12-01',note:'VIP客户',status:'active'},
+  {id:'acc-4',username:'zhaoliu',password:'Zl@9999',role:'user',expire:'2026-06-30',note:'实习生',status:'disabled'},
+  {id:'acc-5',username:'sunqi',password:'Sq55555',role:'user',expire:'2025-03-01',note:'已离职',status:'expired'}
+];
+var nextId=6;var pendingImport=[];var editingId=null;var resetTargetId=null;
+function genId(){return 'acc-'+(nextId++)}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function getStatus(a){if(a.status==='disabled')return 'disabled';if(a.expire&&a.expire<todayStr())return 'expired';return 'active'}
+function statusLabel(s){if(s==='active')return '已启用';if(s==='disabled')return '已停用';return '已过期'}
+function renderStats(){var t=accounts.length,a=0,d=0,e=0;accounts.forEach(function(x){var s=getStatus(x);if(s==='active')a++;else if(s==='disabled')d++;else e++});document.getElementById('stat-total').textContent=t;document.getElementById('stat-active').textContent=a;document.getElementById('stat-disabled').textContent=d;document.getElementById('stat-expired').textContent=e}
+function renderTable(){var search=document.getElementById('search-input').value.toLowerCase(),filter=document.getElementById('status-filter').value;var filtered=accounts.filter(function(a){var s=getStatus(a);if(filter&&s!==filter)return false;if(search&&a.username.toLowerCase().indexOf(search)===-1&&(!a.note||a.note.toLowerCase().indexOf(search)===-1))return false;return true});var tbody=document.getElementById('accounts-body'),empty=document.getElementById('empty-state');if(!filtered.length){tbody.innerHTML='';empty.style.display='';return}empty.style.display='none';var h='';filtered.forEach(function(a,i){var s=getStatus(a);h+='<tr><td style="color:var(--muted-light);font-size:12px">'+(i+1)+'</td><td class="username-cell">'+esc(a.username)+'</td><td class="password-cell">'+esc(a.password)+'</td><td><span class="badge-role badge-role-'+a.role+'">'+(a.role==='admin'?'管理员':'普通')+'</span></td><td><span class="badge badge-'+s+'">'+statusLabel(s)+'</span></td><td class="date-cell">'+(a.expire||'—')+'</td><td class="note-cell" title="'+esc(a.note||'')+'">'+esc(a.note||'—')+'</td><td><div class="actions"><button class="btn-icon" title="编辑" onclick="openEditModal(\''+a.id+'\')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button><button class="btn-icon" title="'+(s==='disabled'?'启用':'停用')+'" onclick="toggleStatus(\''+a.id+'\')">'+(s==='disabled'?'<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 8.5L7 11.5 12 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':'<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 10.5L10.5 5.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>')+'</button><button class="btn-icon" title="重置密码" onclick="openResetModal(\''+a.id+'\')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 7V5a3 3 0 016 0v2" stroke="currentColor" stroke-width="1.2"/></svg></button><button class="btn-icon danger" title="删除" onclick="confirmDelete(\''+a.id+'\')"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M5 4v8.5a1.5 1.5 0 001.5 1.5h3a1.5 1.5 0 001.5-1.5V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td></tr>'});tbody.innerHTML=h}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'success');clearTimeout(t._timer);t._timer=setTimeout(function(){t.className='toast'},2500)}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function openCreateModal(){editingId=null;document.getElementById('modal-create-title').textContent='发行新账号';document.getElementById('modal-create-desc').textContent='填写以下信息为用户创建登录账号';document.getElementById('btn-create-submit').textContent='确认发行';document.getElementById('f-username').value='';document.getElementById('f-username').readOnly=false;document.getElementById('f-password').value='';document.getElementById('f-role').value='user';document.getElementById('f-expire').value='';document.getElementById('f-note').value='';openModal('modal-create')}
+function openEditModal(id){var a=accounts.find(function(x){return x.id===id});if(!a)return;editingId=id;document.getElementById('modal-create-title').textContent='编辑账号';document.getElementById('modal-create-desc').textContent='修改「'+a.username+'」的信息';document.getElementById('btn-create-submit').textContent='保存修改';document.getElementById('f-username').value=a.username;document.getElementById('f-username').readOnly=true;document.getElementById('f-password').value=a.password;document.getElementById('f-role').value=a.role||'user';document.getElementById('f-expire').value=a.expire||'';document.getElementById('f-note').value=a.note||'';openModal('modal-create')}
+function handleCreateSubmit(e){e.preventDefault();var username=document.getElementById('f-username').value.trim(),password=document.getElementById('f-password').value,role=document.getElementById('f-role').value,expire=document.getElementById('f-expire').value||'',note=document.getElementById('f-note').value.trim();if(!username||!password){showToast('请填写用户名和密码','error');return}if(password.length<6){showToast('密码至少 6 位','error');return}if(editingId){var a=accounts.find(function(x){return x.id===editingId});if(a){a.password=password;a.role=role;a.expire=expire;a.note=note}showToast('账号已更新')}else{if(accounts.some(function(a){return a.username===username})){showToast('用户名已存在','error');return}accounts.push({id:genId(),username:username,password:password,role:role,expire:expire,note:note,status:'active'});showToast('账号已发行')}closeModal('modal-create');renderStats();renderTable()}
+function toggleStatus(id){var a=accounts.find(function(x){return x.id===id});if(!a)return;a.status=a.status==='disabled'?'active':'disabled';showToast(a.status==='active'?a.username+' 已启用':a.username+' 已停用');renderStats();renderTable()}
+function openResetModal(id){var a=accounts.find(function(x){return x.id===id});if(!a)return;resetTargetId=id;document.getElementById('reset-desc').textContent='为「'+a.username+'」设置新密码';document.getElementById('f-new-pw').value='';openModal('modal-reset')}
+function handleResetSubmit(e){e.preventDefault();var pw=document.getElementById('f-new-pw').value;if(pw.length<6){showToast('密码至少 6 位','error');return}var a=accounts.find(function(x){return x.id===resetTargetId});if(a)a.password=pw;showToast('密码已重置');closeModal('modal-reset');renderTable()}
+function confirmDelete(id){var a=accounts.find(function(x){return x.id===id});if(!a)return;document.getElementById('confirm-title').textContent='确认删除「'+a.username+'」？';document.getElementById('confirm-desc').textContent='该账号将被永久删除，此操作不可撤销。';document.getElementById('btn-confirm-action').onclick=function(){accounts=accounts.filter(function(x){return x.id!==id});showToast('已删除 '+a.username);closeModal('modal-confirm');renderStats();renderTable()};openModal('modal-confirm')}
+function openImportModal(){pendingImport=[];document.getElementById('import-file').value='';document.getElementById('import-preview').style.display='none';document.getElementById('btn-import-confirm').disabled=true;openModal('modal-import')}
+var importZone=document.getElementById('import-zone');importZone.addEventListener('dragover',function(e){e.preventDefault();this.classList.add('dragover')});importZone.addEventListener('dragleave',function(){this.classList.remove('dragover')});importZone.addEventListener('drop',function(e){e.preventDefault();this.classList.remove('dragover');if(e.dataTransfer.files.length)handleImportFileObj(e.dataTransfer.files[0])});
+function handleImportFile(input){if(input.files.length)handleImportFileObj(input.files[0])}
+function handleImportFileObj(file){var reader=new FileReader();reader.onload=function(e){var lines=e.target.result.split('\n').filter(function(l){return l.trim()});pendingImport=[];var preview=[];for(var i=0;i<lines.length;i++){var line=lines[i].trim();if(!line)continue;var parts=line.split(',').map(function(s){return s.trim()});if(parts.length<2)continue;var username=parts[0],password=parts[1],role=(parts[2]==='admin'?'admin':'user'),expire=parts[3]||'',note=parts[4]||'';if(!username||!password)continue;if(i===0&&(username==='用户名'||username==='username'))continue;pendingImport.push({username:username,password:password,role:role,expire:expire,note:note,status:'active'});if(preview.length<5)preview.push(username+' / '+password+' / '+(role==='admin'?'管理员':'普通')+(expire?' / '+expire:'')+(note?' / '+note:''))}if(!pendingImport.length){showToast('未识别到有效数据','error');return}document.getElementById('import-preview-content').textContent=preview.join('\n')+(pendingImport.length>5?'\n...共 '+pendingImport.length+' 条':'');document.getElementById('import-preview').style.display='';document.getElementById('btn-import-confirm').disabled=false};reader.readAsText(file)}
+function confirmImport(){var added=0;pendingImport.forEach(function(item){if(accounts.some(function(a){return a.username===item.username}))return;item.id=genId();accounts.push(item);added++});showToast('成功导入 '+added+' 个账号'+(added<pendingImport.length?'，'+(pendingImport.length-added)+' 个重复跳过':''));closeModal('modal-import');renderStats();renderTable()}
+renderStats();renderTable();
+</script>
+</body>
+</html>

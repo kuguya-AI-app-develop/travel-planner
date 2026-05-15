@@ -1,0 +1,2336 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅行策划 — Travel Planner (多计划版)</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:oklch(97.5% 0.008 70);
+  --surface:oklch(100% 0 0);
+  --sidebar:oklch(96.5% 0.01 70);
+  --sidebar-hover:oklch(94% 0.014 70);
+  --sidebar-active:oklch(93% 0.025 260);
+  --fg:oklch(18% 0.01 60);
+  --muted:oklch(52% 0.012 60);
+  --muted-light:oklch(68% 0.008 60);
+  --border:oklch(90% 0.01 70);
+  --border-light:oklch(93.5% 0.006 70);
+  --accent:oklch(56% 0.2 265);
+  --accent-hover:oklch(50% 0.21 265);
+  --accent-subtle:oklch(95% 0.03 265);
+  --accent-glow:oklch(56% 0.2 265 / 14%);
+  --success:oklch(62% 0.17 150);
+  --success-subtle:oklch(95.5% 0.04 150);
+  --warn:oklch(74% 0.15 75);
+  --warn-subtle:oklch(96% 0.04 75);
+  --danger:oklch(56% 0.2 25);
+  --danger-subtle:oklch(95.5% 0.04 25);
+  --coral:oklch(62% 0.16 25);
+  --coral-subtle:oklch(95% 0.04 25);
+  --teal:oklch(58% 0.12 185);
+  --teal-subtle:oklch(95% 0.03 185);
+  --purple:oklch(56% 0.16 300);
+  --purple-subtle:oklch(95% 0.03 300);
+  --font-display:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',system-ui,sans-serif;
+  --font-mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sidebar-w:232px;
+  --radius:10px;
+  --radius-lg:14px;
+  --radius-xl:18px;
+  --shadow-sm:0 1px 3px oklch(0% 0 0 / 6%);
+  --shadow-md:0 4px 14px oklch(0% 0 0 / 8%);
+  --shadow-lg:0 8px 30px oklch(0% 0 0 / 12%);
+}
+html{font-size:14px}
+body{font-family:var(--font-body);color:var(--fg);background:var(--bg);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.55;background-image:linear-gradient(oklch(95% 0.008 70 / 40%) 1px,transparent 1px),linear-gradient(90deg,oklch(95% 0.008 70 / 40%) 1px,transparent 1px);background-size:32px 32px}
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 10px 24px;display:flex;flex-direction:column;gap:2px;position:fixed;left:0;top:0;z-index:100}
+.sidebar-brand{font-weight:700;font-size:14px;padding:8px 12px 20px;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px;color:var(--fg)}
+.sidebar-brand svg{flex-shrink:0}
+.sidebar-label{font-size:10.5px;font-weight:600;color:var(--muted-light);padding:18px 14px 6px;letter-spacing:.06em;text-transform:uppercase}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:var(--radius);cursor:pointer;font-size:13.5px;color:var(--muted);transition:all .15s;user-select:none;position:relative}
+.sidebar-item:hover{background:var(--sidebar-hover);color:var(--fg)}
+.sidebar-item.active{background:var(--sidebar-active);color:var(--accent);font-weight:600;box-shadow:var(--shadow-sm)}
+.sidebar-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--accent);border-radius:0 3px 3px 0}
+.sidebar-item svg{width:16px;height:16px;flex-shrink:0;opacity:.45}
+.sidebar-item.active svg{opacity:.85}
+.sidebar-divider{height:1px;background:var(--border-light);margin:8px 12px}
+.sidebar-cover-toggle{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;user-select:none;margin-top:8px}
+.sidebar-cover-toggle:hover{background:var(--sidebar-hover);color:var(--fg)}
+.toggle-track{width:36px;height:20px;border-radius:10px;position:relative;transition:background .25s;flex-shrink:0;cursor:pointer}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:white;border-radius:50%;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px oklch(0% 0 0 / 20%)}
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.section{display:none;padding:0 48px 64px}
+.section.active{display:block}
+.cover-wrapper{position:relative;width:100%;flex-shrink:0;overflow:hidden;transition:max-height .4s ease}
+.cover-wrapper.hidden{max-height:0!important}
+.cover{position:relative;width:100%;height:0;overflow:hidden;cursor:default;transition:height .35s ease}
+.cover.has-image{height:280px;cursor:grab}
+.cover.has-image:active{cursor:grabbing}
+.cover img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;-webkit-user-drag:none}
+.cover-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,oklch(0% 0 0 / 0%),oklch(0% 0 0 / 25%));pointer-events:none}
+.cover-hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:white;background:oklch(0% 0 0 / 40%);padding:4px 12px;border-radius:20px;backdrop-filter:blur(4px);opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.cover.has-image:hover .cover-hint{opacity:1}
+.cover-actions{position:absolute;top:14px;right:14px;display:flex;gap:6px;z-index:10;opacity:0;transition:opacity .2s}
+.cover:hover .cover-actions{opacity:1}
+.cover-btn{padding:5px 13px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:none;background:oklch(100% 0 0 / 85%);color:var(--fg);backdrop-filter:blur(10px);font-family:var(--font-body);transition:all .12s;white-space:nowrap}
+.cover-btn:hover{background:oklch(100% 0 0 / 95%)}
+.cover-btn.danger{color:var(--danger)}
+.cover-empty{display:flex;align-items:center;justify-content:center;width:100%;padding:16px 48px}
+.cover-add{display:flex;align-items:center;gap:8px;padding:10px 20px;border:1.5px dashed var(--border);border-radius:var(--radius-lg);cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);background:transparent;transition:all .2s;font-family:var(--font-body);width:fit-content}
+.cover-add:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-subtle)}
+.cover-add svg{width:16px;height:16px}
+.section-header{margin-bottom:28px;padding-top:6px}
+.section-header h1{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-0.03em;line-height:1.2;color:var(--fg);display:flex;align-items:center;gap:10px}
+.section-header h1 .header-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.section-header p{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.5}
+.section-divider{display:flex;align-items:center;gap:12px;margin:0 0 28px;opacity:.4}
+.section-divider span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-light);white-space:nowrap}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--border),transparent)}
+.cal-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.cal-toolbar h2{font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:-0.01em;min-width:130px}
+.cal-toolbar button{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;font-family:var(--font-body);box-shadow:var(--shadow-sm)}
+.cal-toolbar button:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.cal-legend{display:flex;gap:12px;margin-left:auto}
+.cal-legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:500}
+.cal-legend-color{width:10px;height:10px;border-radius:5px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface);box-shadow:var(--shadow-sm);width:100%}
+.cal-header{background:var(--sidebar);padding:10px 8px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.cal-day{min-height:100px;padding:8px 10px;border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);position:relative;cursor:default;transition:background .12s}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day.other-month{background:oklch(97.5% 0.006 70)}
+.cal-day.other-month .cal-date{color:oklch(80% 0.008 60)}
+.cal-day.today .cal-date{background:var(--accent);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.cal-date{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;user-select:none}
+.cal-day.other-month .cal-date{font-weight:400}
+.cal-trip-bar{position:absolute;left:6px;right:6px;height:24px;border-radius:6px;font-size:11px;font-weight:600;color:white;padding:0 8px;display:flex;align-items:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2;transition:box-shadow .15s,transform .1s;user-select:none;letter-spacing:0}
+.cal-trip-bar:hover{box-shadow:0 3px 10px oklch(0% 0 0 / 20%);transform:translateY(-1px)}
+.cal-trip-bar.dragging{opacity:.45;cursor:grabbing;box-shadow:0 4px 16px oklch(0% 0 0 / 22%)}
+.cal-trip-bar.trip-start{border-radius:6px 0 0 6px}
+.cal-trip-bar.trip-mid{border-radius:0}
+.cal-trip-bar.trip-end{border-radius:0 6px 6px 0}
+.cal-trip-bar.trip-single{border-radius:6px}
+.cal-day.drag-over{background:var(--accent-subtle)}
+.trip-name-label{pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;flex:1;min-width:0}
+.trip-delete{position:absolute;top:4px;right:6px;font-size:10px;cursor:pointer;opacity:0;color:white;background:oklch(0% 0 0 / 25%);border-radius:4px;width:16px;height:16px;display:flex;align-items:center;justify-content:center;transition:opacity .12s}
+.cal-trip-bar:hover .trip-delete{opacity:1}
+.modal-overlay{position:fixed;inset:0;background:oklch(0% 0 0 / 20%);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-xl);padding:28px 32px;width:400px;box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:20px;letter-spacing:-0.02em}
+.modal label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;margin-top:14px;font-weight:500}
+.modal label:first-of-type{margin-top:0}
+.modal input,.modal select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;transition:all .15s;background:var(--surface)}
+.modal input:focus,.modal select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.modal-actions{display:flex;gap:8px;margin-top:22px;justify-content:flex-end;align-items:center}
+.modal-delete-link{font-size:12px;color:var(--danger);cursor:pointer;margin-right:auto;transition:opacity .12s;background:none;border:none;font-family:var(--font-body);padding:0;font-weight:500}
+.modal-delete-link:hover{opacity:.7}
+.btn{padding:7px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--fg);transition:all .15s;font-family:var(--font-body)}
+.btn:hover{background:var(--sidebar)}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent);box-shadow:0 2px 6px var(--accent-glow)}
+.btn-primary:hover{background:var(--accent-hover);filter:none}
+.timeline{margin-top:20px;padding:18px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm)}
+.timeline h3{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:14px;letter-spacing:.06em;text-transform:uppercase}
+.timeline-bar{position:relative;height:34px;background:var(--sidebar);border-radius:var(--radius);overflow:hidden;margin-bottom:10px}
+.timeline-segment{position:absolute;top:5px;height:24px;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0}
+.timeline-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted-light)}
+.timeline-vertical{display:none}
+.timeline-vertical-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-light)}
+.timeline-vertical-item:last-child{border-bottom:none}
+.timeline-vertical-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.timeline-vertical-content{flex:1;min-width:0}
+.timeline-vertical-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.timeline-vertical-name:hover{color:var(--accent)}
+.timeline-vertical-dates{font-size:11px;color:var(--muted);margin-top:2px}
+.trip-name-detail{position:fixed;inset:0;background:oklch(0% 0 0 / 25%);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
+.trip-name-detail.show{display:flex}
+.trip-name-detail-box{background:var(--surface);border-radius:var(--radius-xl);padding:24px 28px;max-width:320px;width:calc(100vw - 32px);box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+.trip-name-detail-title{font-size:16px;font-weight:700;margin-bottom:8px;word-break:break-all}
+.trip-name-detail-dates{font-size:13px;color:var(--muted)}
+.trip-name-detail-close{margin-top:16px;width:100%;padding:10px;border:none;background:var(--accent);color:white;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body)}
+.trip-name-detail-close:hover{background:var(--accent-hover)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--sidebar)}
+th{text-align:left;padding:11px 14px;font-weight:600;color:var(--muted);font-size:11.5px;border-bottom:1px solid var(--border);letter-spacing:.02em;white-space:nowrap;text-transform:uppercase}
+td{padding:10px 14px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:oklch(98% 0.004 70)}
+td[contenteditable]{cursor:text;outline:none;transition:background .12s;border-radius:4px}
+td[contenteditable]:focus{background:var(--accent-subtle)}
+.table-actions{display:flex;gap:8px;margin-top:14px}
+.btn-sm{padding:6px 14px;font-size:12px;font-weight:500;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);transition:all .15s;font-family:var(--font-body)}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.btn-danger{color:var(--danger);border-color:transparent}
+.btn-danger:hover{background:var(--danger-subtle);border-color:var(--danger)}
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.02em}
+.pill-booked{background:var(--success-subtle);color:oklch(42% 0.14 150)}
+.pill-pending{background:var(--warn-subtle);color:oklch(48% 0.12 75)}
+.pill-compare{background:var(--accent-subtle);color:var(--accent)}
+.stars{display:flex;gap:2px;justify-content:center}
+.star{width:18px;height:18px;cursor:pointer;color:var(--border);transition:all .12s}
+.star.filled{color:oklch(70% 0.16 85)}
+.star:hover{color:oklch(65% 0.18 70);transform:scale(1.1)}
+.note-input{width:100%;min-width:60px;padding:4px 8px;border:1px solid var(--border-light);border-radius:6px;font-size:12px;font-family:var(--font-body);outline:none;transition:all .15s;background:var(--surface);text-align:center}
+.note-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+.hotel-card,.flight-card,.expense-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.hotel-card-head,.flight-card-head,.expense-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.hotel-card-head input[type="checkbox"],.flight-card-head input[type="checkbox"],.expense-card-head input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.hotel-card-name,.flight-card-name,.expense-card-name{font-weight:600;font-size:14px;flex:1;outline:none}
+.hotel-card-name:focus,.flight-card-name:focus,.expense-card-name:focus{background:var(--accent-subtle);border-radius:3px;padding:0 3px;margin:0 -3px}
+.hotel-card-meta,.flight-card-meta,.expense-card-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.hotel-card-meta span[contenteditable],.flight-card-meta span[contenteditable],.expense-card-meta span[contenteditable]{outline:none;cursor:text}
+.hotel-card-meta span[contenteditable]:focus,.flight-card-meta span[contenteditable]:focus,.expense-card-meta span[contenteditable]:focus{background:var(--accent-subtle);border-radius:3px;padding:0 3px;margin:0 -3px}
+.hotel-card-meta .price,.flight-card-meta .price{font-family:var(--font-mono);font-weight:600;color:var(--fg)}
+.hotel-card-criteria,.flight-card-notes{display:flex;flex-wrap:wrap;gap:6px 16px}
+.hotel-card-criterion,.flight-card-note{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.hotel-card-criterion .criterion-name,.flight-card-note .note-label{min-width:40px;font-weight:500}
+.hotel-card-score,.flight-card-footer{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light)}
+.hotel-card-delete,.expense-card-delete{margin-left:auto;font-size:16px;color:var(--muted);cursor:pointer;background:none;border:none;padding:4px;line-height:1}
+.hotel-card-delete:hover,.expense-card-delete:hover{color:var(--danger)}
+.expense-card-meta .amount{font-family:var(--font-mono);font-weight:600;color:var(--fg)}
+.dest-summary-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:28px}
+.dest-summary-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.dest-summary-name{font-weight:600;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.dest-summary-country{font-size:12px;font-weight:400;color:var(--muted)}
+.dest-summary-notes{font-size:12px;color:var(--muted);margin-bottom:8px}
+.dest-summary-scores{display:flex;flex-wrap:wrap;gap:6px}
+.dest-score-tag{font-size:11px;background:var(--accent-subtle);color:var(--accent);padding:2px 8px;border-radius:12px;font-weight:500}
+.score-bar-wrap{display:flex;align-items:center;gap:8px}
+.score-bar{flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .35s ease}
+.score-value{font-size:12px;font-weight:700;font-family:var(--font-mono);min-width:28px;text-align:right}
+.select-cell{text-align:center;width:44px}
+.select-cell input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.criteria-cell{position:relative}
+.criteria-cell .criteria-delete{display:none;position:absolute;top:4px;right:4px;font-size:10px;cursor:pointer;color:var(--muted);background:var(--sidebar);border-radius:4px;width:16px;height:16px;align-items:center;justify-content:center;line-height:1}
+.criteria-cell:hover .criteria-delete{display:flex}
+.criteria-cell .criteria-delete:hover{color:var(--danger);background:var(--danger-subtle)}
+th[contenteditable]{cursor:text;outline:none;transition:background .12s;border-radius:4px}
+th[contenteditable]:focus{background:var(--accent-subtle)}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:32px}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm);transition:box-shadow .15s,transform .15s;position:relative;overflow:hidden}
+.summary-card::after{content:'';position:absolute;top:-20px;right:-20px;width:60px;height:60px;border-radius:50%;background:var(--accent-subtle);opacity:.3}
+.summary-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.summary-card-label{font-size:11.5px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+.summary-card-value{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:-0.03em}
+.summary-card-note{font-size:11.5px;color:var(--muted-light);margin-top:6px}
+.checklist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)}
+.checklist-header{padding:14px 18px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.checklist-header .btn-sm{font-size:11px;padding:4px 12px}
+.checklist-item{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border-light);transition:background .12s}
+.checklist-item:last-child{border-bottom:none}
+.checklist-item:hover{background:oklch(98.5% 0.004 70)}
+.checklist-item input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.checklist-item.done .checklist-text{text-decoration:line-through;color:var(--muted-light)}
+.checklist-text{flex:1;font-size:13px;outline:none}
+.checklist-text:focus{background:var(--accent-subtle);border-radius:4px;padding:0 4px;margin:0 -4px}
+.checklist-delete{opacity:0;color:var(--muted);cursor:pointer;font-size:14px;transition:all .12s}
+.checklist-item:hover .checklist-delete{opacity:1}
+.checklist-delete:hover{color:var(--danger)}
+.itinerary{margin-top:28px}
+.itinerary h3{font-size:12px;font-weight:600;margin-bottom:14px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.itinerary-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.itinerary-day-header{padding:12px 18px;font-size:13px;font-weight:500;background:var(--sidebar);border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px}
+.itinerary-day-header span{font-weight:400;color:var(--muted);font-size:12px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 24px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;box-shadow:var(--shadow-lg)}
+.toast.show{opacity:1}
+.cal-grid{overflow-x:auto}
+.mobile-menu-btn{display:none;position:fixed;top:12px;left:12px;z-index:110;width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
+.mobile-menu-btn svg{width:18px;height:18px;color:var(--fg)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:oklch(0% 0 0 / 30%);z-index:99}
+@media (max-width:1023px){
+  :root{--sidebar-w:200px}
+  .section{padding:0 32px 48px}
+  .section-header h1{font-size:22px}
+  .summary-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+}
+@media (max-width:639px){
+  :root{--sidebar-w:0px}
+  html{font-size:13px}
+  body{background-image:linear-gradient(oklch(93% 0.008 70 / 35%) 1px,transparent 1px),linear-gradient(90deg,oklch(93% 0.008 70 / 35%) 1px,transparent 1px);background-size:24px 24px}
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;width:260px;z-index:101}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.show{display:block}
+  .mobile-menu-btn{display:flex}
+  .main{margin-left:0}
+  .section{padding:0 16px 32px}
+  .section-header{margin-bottom:20px}
+  .section-header h1{font-size:20px}
+  .section-header h1 .header-icon{width:24px;height:24px;border-radius:6px}
+  .section-header h1 .header-icon svg{width:14px;height:14px}
+  .section-header p{font-size:12px}
+  .cover-actions{opacity:1;top:8px;right:8px}
+  .cover-hint{display:none}
+  .cover-empty{padding:12px 16px}
+  .cover-add{font-size:12px;padding:8px 14px}
+  .cal-toolbar{gap:6px;margin-bottom:12px}
+  .cal-toolbar h2{font-size:14px;min-width:auto}
+  .cal-toolbar button{padding:4px 8px;font-size:11px}
+  .cal-legend{display:none}
+  .cal-grid{border-radius:var(--radius)}
+  .cal-header{padding:6px 2px;font-size:10px}
+  .cal-day{min-height:72px;padding:4px 4px 26px}
+  .cal-date{font-size:11px;margin-bottom:2px}
+  .cal-day.today .cal-date{width:22px;height:22px;font-size:10px}
+  .cal-trip-bar{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:18px;min-height:auto;padding:0 20px 0 5px;font-size:9px;line-height:18px;border-radius:4px}
+  .cal-trip-bar .trip-name-label{display:block;overflow:hidden;text-overflow:ellipsis}
+  .cal-trip-bar.trip-start{border-radius:4px 0 0 4px}
+  .cal-trip-bar.trip-mid{border-radius:0}
+  .cal-trip-bar.trip-end{border-radius:0 4px 4px 0}
+  .cal-trip-bar.trip-single{border-radius:4px}
+  .trip-delete{opacity:1;width:14px;height:14px;font-size:9px;top:2px;right:2px;background:oklch(0% 0 0 / 35%)}
+  .timeline-bar,.timeline-labels{display:none}
+  .timeline-vertical{display:block}
+  .timeline h3{margin-bottom:8px}
+  .timeline{padding:12px 14px;margin-top:14px}
+  .table-wrap{border-radius:var(--radius)}
+  #hotels-table,#destinations-table,#flights-table-full,#expenses-table{display:none}
+  .hotel-card,.flight-card,.expense-card{display:block}
+  th{padding:8px 10px;font-size:10.5px}
+  td{padding:7px 10px;font-size:12px}
+  .select-cell{width:36px}
+  .table-actions{gap:6px;margin-top:10px;flex-wrap:wrap}
+  .table-actions .btn-sm{flex:1;min-width:100px;text-align:center}
+  .star{width:20px;height:20px}
+  .dest-summary-list{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .summary-card{padding:14px;border-radius:var(--radius)}
+  .summary-card-label{font-size:10px;margin-bottom:4px}
+  .summary-card-value{font-size:22px}
+  .summary-card-note{font-size:10px}
+  .checklist{border-radius:var(--radius)}
+  .checklist-header{padding:10px 14px;font-size:12px}
+  .checklist-item{padding:9px 14px;gap:10px}
+  .checklist-text{font-size:12px}
+  .itinerary{margin-top:20px}
+  .itinerary-day-header{padding:10px 14px;font-size:12px;gap:6px;flex-wrap:wrap}
+  .itinerary-day-header span{font-size:11px}
+  .modal{width:calc(100vw - 32px);max-width:360px;padding:20px 24px}
+  .modal h3{font-size:15px;margin-bottom:16px}
+  .modal label{font-size:11px;margin-top:10px}
+  .modal input,.modal select{padding:8px 10px;font-size:13px}
+  .toast{bottom:24px;font-size:12px;padding:8px 18px}
+}
+@media (max-width:379px){
+  .section{padding:0 12px 28px}
+  .section-header h1{font-size:18px}
+  .cal-day{min-height:60px;padding:3px 3px 24px}
+  .cal-date{font-size:10px}
+  .cal-trip-bar{font-size:8px;min-height:16px;padding:2px 20px 2px 4px}
+  .summary-grid{grid-template-columns:1fr}
+  .summary-card-value{font-size:20px}
+}
+
+
+
+/* ===== Hotel/Expense Status ===== */
+.hotel-status,.expense-status{cursor:pointer;user-select:none}
+/* ===== Itinerary ===== */
+.itinerary-planner{margin-top:0}
+.itinerary-day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.itinerary-day-header{padding:14px 18px;font-size:14px;font-weight:600;background:var(--sidebar);border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;cursor:pointer}
+.itinerary-day-header .day-date{font-weight:400;color:var(--muted);font-size:12px;margin-left:auto}
+.itinerary-day-header .day-toggle{font-size:11px;opacity:.5;transition:transform .2s}
+.itinerary-day-header .day-toggle.open{transform:rotate(180deg)}
+.itinerary-day-body{padding:0;max-height:2000px;overflow:hidden;transition:max-height .3s ease}
+.itinerary-day-body.collapsed{max-height:0}
+.itinerary-item{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border-light);transition:background .12s}
+.itinerary-item:last-child{border-bottom:none}
+.itinerary-item:hover{background:oklch(98.5% 0.004 70)}
+.itinerary-time{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--accent);min-width:48px;padding-top:2px;flex-shrink:0}
+.itinerary-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.itinerary-content{flex:1;min-width:0}
+.itinerary-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.itinerary-meta{font-size:11.5px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.itinerary-type-badge{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
+.type-sight{background:var(--accent-subtle);color:var(--accent)}
+.type-food{background:var(--warn-subtle);color:oklch(48% 0.12 75)}
+.type-transport{background:var(--teal-subtle);color:var(--teal)}
+.type-hotel{background:var(--purple-subtle);color:var(--purple)}
+.type-other{background:oklch(95% 0.006 60);color:var(--muted)}
+.itinerary-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.itinerary-item:hover .itinerary-actions{opacity:1}
+.itinerary-action{width:24px;height:24px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.itinerary-action:hover{background:var(--sidebar-hover);color:var(--fg)}
+.itinerary-action.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.itinerary-add{display:flex;align-items:center;gap:8px;padding:10px 18px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s}
+.itinerary-add:hover{background:var(--accent-subtle);color:var(--accent)}
+/* ===== Packing List ===== */
+.packing-category{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.packing-category-header{padding:12px 18px;font-size:13px;font-weight:600;background:var(--sidebar);border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.packing-category-count{font-size:11px;color:var(--muted);font-weight:400}
+.packing-item{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border-light);transition:background .12s}
+.packing-item:last-child{border-bottom:none}
+.packing-item:hover{background:oklch(98.5% 0.004 70)}
+.packing-item.done .packing-text{text-decoration:line-through;color:var(--muted-light)}
+.packing-text{flex:1;font-size:13px;outline:none}
+.packing-text:focus{background:var(--accent-subtle);border-radius:4px;padding:0 4px;margin:0 -4px}
+.packing-delete{opacity:0;color:var(--muted);cursor:pointer;font-size:14px;transition:all .12s}
+.packing-item:hover .packing-delete{opacity:1}
+.packing-delete:hover{color:var(--danger)}
+.packing-add-row{display:flex;gap:8px;padding:10px 18px;border-top:1px solid var(--border-light)}
+.packing-add-input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--font-body);outline:none}
+.packing-add-input:focus{border-color:var(--accent)}
+.packing-progress{margin-bottom:20px}
+.packing-progress-bar{height:8px;background:var(--border-light);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.packing-progress-fill{height:100%;border-radius:4px;transition:width .35s ease}
+.packing-progress-text{font-size:12px;color:var(--muted)}
+/* ===== Documents ===== */
+.doc-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-sm);position:relative}
+.doc-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.doc-card-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.doc-card-name{font-size:14px;font-weight:600;flex:1}
+.doc-card-status{font-size:10px;padding:3px 10px;border-radius:12px;font-weight:600}
+.doc-card-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.doc-card-row .doc-label{min-width:48px;font-weight:500}
+.doc-card-row .doc-value{color:var(--fg)}
+.doc-card-actions{position:absolute;top:12px;right:12px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.doc-card:hover .doc-card-actions{opacity:1}
+.doc-card-action{width:24px;height:24px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
+.doc-card-action:hover{background:var(--sidebar-hover);color:var(--fg)}
+.doc-card-action.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.doc-add-btn{display:flex;align-items:center;gap:8px;padding:10px 18px;border:1.5px dashed var(--border);border-radius:var(--radius-lg);cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);background:transparent;transition:all .2s;width:fit-content}
+.doc-add-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-subtle)}
+.doc-status-valid{background:var(--success-subtle);color:oklch(42% 0.14 150)}
+.doc-status-expiring{background:var(--warn-subtle);color:oklch(48% 0.12 75)}
+.doc-status-expired{background:var(--danger-subtle);color:var(--danger)}
+.doc-status-processing{background:var(--accent-subtle);color:var(--accent)}
+.doc-status-none{background:oklch(95% 0.006 60);color:var(--muted)}
+/* ===== Actual vs Budget ===== */
+.summary-card-actual{font-family:var(--font-mono);font-size:13px;margin-top:4px}
+.summary-card-actual .over{color:var(--danger)}
+.summary-card-actual .under{color:var(--success)}
+/* ===== Modal for itinerary ===== */
+.itinerary-modal label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;margin-top:12px;font-weight:500}
+.itinerary-modal label:first-of-type{margin-top:0}
+.itinerary-modal select,.itinerary-modal input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;background:var(--surface)}
+.itinerary-modal select:focus,.itinerary-modal input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+@media (max-width:639px){
+  .doc-cards{grid-template-columns:1fr}
+  .itinerary-item{gap:8px;padding:10px 14px}
+  .itinerary-time{min-width:40px;font-size:11px}
+}
+/* ===== Plan Overview ===== */
+.plan-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:80px}
+.plan-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0;box-shadow:var(--shadow-sm);transition:box-shadow .15s,transform .15s;overflow:hidden;cursor:pointer;position:relative}
+.plan-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.plan-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+.plan-card-header{display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border-light)}
+.plan-card-check{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.plan-card-name{font-size:16px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-card-status{font-size:10px;padding:3px 10px;border-radius:12px;font-weight:600;letter-spacing:.02em;flex-shrink:0}
+.plan-card-body{padding:16px 20px}
+.plan-card-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12.5px;color:var(--muted)}
+.plan-card-row svg{flex-shrink:0;opacity:.5}
+.plan-card-row .label{min-width:56px;font-weight:500;color:var(--muted)}
+.plan-card-row .value{color:var(--fg);font-weight:500}
+.plan-card-budget{font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:-0.02em;color:var(--fg);margin:12px 0 4px}
+.plan-card-budget-label{font-size:11px;color:var(--muted-light);margin-bottom:12px}
+.plan-card-progress{margin-top:4px}
+.plan-card-progress-bar{height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.plan-card-progress-fill{height:100%;border-radius:3px;transition:width .35s ease}
+.plan-card-progress-text{font-size:11px;color:var(--muted-light)}
+.plan-card-footer{padding:12px 20px;border-top:1px solid var(--border-light);display:flex;justify-content:flex-end}
+.plan-card-btn{padding:6px 14px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;font-family:var(--font-body)}
+.plan-card-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.compare-bar{position:fixed;bottom:0;left:var(--sidebar-w);right:0;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 20px oklch(0% 0 0 / 10%);padding:14px 32px;z-index:180;display:none;animation:slideUp .2s ease}
+.compare-bar.show{display:block}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
+.compare-bar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.compare-bar-title{font-size:13px;font-weight:600;color:var(--fg)}
+.compare-bar-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:4px}
+.compare-bar-close:hover{color:var(--fg)}
+.compare-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.compare-table th{text-align:left;padding:8px 12px;font-weight:600;color:var(--muted);font-size:11px;border-bottom:1px solid var(--border);letter-spacing:.02em;background:var(--sidebar);white-space:nowrap}
+.compare-table td{padding:8px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+.compare-table tr:last-child td{border-bottom:none}
+.compare-table .compare-highlight{font-weight:700;color:var(--accent)}
+.compare-table .compare-best{background:var(--success-subtle)}
+@media (max-width:1023px){
+  .plan-cards{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+}
+@media (max-width:639px){
+  .plan-cards{grid-template-columns:1fr;gap:10px}
+  .plan-card-header{padding:14px 16px 10px}
+  .plan-card-body{padding:12px 16px}
+  .compare-bar{left:0;padding:12px 16px}
+  .compare-table{font-size:11.5px}
+  .compare-table th,.compare-table td{padding:6px 8px}
+}
+
+/* ===== Plan Header Bar ===== */
+.plan-header{display:flex;align-items:center;gap:12px;padding:12px 48px;background:var(--surface);border-bottom:1px solid var(--border);min-height:48px;flex-wrap:wrap}
+.plan-header-name{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-0.02em;cursor:pointer;display:flex;align-items:center;gap:6px}
+.plan-header-name:hover{color:var(--accent)}
+.plan-header-name svg{opacity:.5;flex-shrink:0}
+.plan-status-select{padding:5px 28px 5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;outline:none;font-family:var(--font-body);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;transition:all .15s;letter-spacing:.02em}
+.plan-status-select:hover{border-color:var(--accent);background-color:var(--accent-subtle)}
+.plan-status-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.plan-status-select.status-draft{color:oklch(50% 0.01 60);border-color:oklch(85% 0.006 60)}
+.plan-status-select.status-active{color:var(--accent);border-color:oklch(56% 0.2 265 / 30%);background-color:var(--accent-subtle)}
+.plan-status-select.status-confirmed{color:oklch(42% 0.14 150);border-color:oklch(62% 0.17 150 / 25%);background-color:var(--success-subtle)}
+.plan-status-select.status-traveling{color:oklch(48% 0.12 75);border-color:oklch(74% 0.15 75 / 25%);background-color:var(--warn-subtle)}
+.plan-status-select.status-done{color:var(--purple);border-color:oklch(56% 0.16 300 / 25%);background-color:var(--purple-subtle)}
+.plan-header-actions{display:flex;gap:6px;margin-left:8px}
+.plan-header-action{padding:5px 12px;border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;font-family:var(--font-body);display:flex;align-items:center;gap:5px}
+.plan-header-action:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.plan-header-action.danger{color:var(--danger);border-color:transparent}
+.plan-header-action.danger:hover{background:var(--danger-subtle);border-color:var(--danger);box-shadow:none}
+.plan-header-meta{font-size:12px;color:var(--muted);margin-left:auto;display:flex;align-items:center;gap:16px}
+.plan-header-meta span{display:flex;align-items:center;gap:4px}
+@media (max-width:639px){
+  .plan-header{padding:10px 16px}
+  .plan-header-meta{display:none}
+}
+/* ===== Plan Selector ===== */
+.plan-selector{position:relative;margin:0 10px 8px;overflow:visible}
+.plan-selector-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--radius);cursor:pointer;font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-subtle);border:1px solid oklch(56% 0.2 265 / 20%);transition:all .15s;user-select:none;width:100%}
+.plan-selector-btn:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.plan-selector-btn svg{flex-shrink:0;opacity:.7}
+.plan-selector-btn .plan-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-selector-btn .plan-arrow{font-size:10px;opacity:.5;transition:transform .2s}
+.plan-selector-btn.open .plan-arrow{transform:rotate(180deg)}
+.plan-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:300px;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:150;display:none;overflow:hidden;min-width:0}
+.plan-dropdown.show{display:block;animation:modalIn .15s ease}
+.plan-dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background .12s;font-size:13px;border-bottom:1px solid var(--border-light);position:relative}
+.plan-dropdown-item:last-child{border-bottom:none}
+.plan-dropdown-item:hover{background:var(--sidebar-hover)}
+.plan-dropdown-item.active{background:var(--accent-subtle);color:var(--accent);font-weight:600}
+.plan-dropdown-item .plan-item-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-dropdown-item .plan-item-status{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;letter-spacing:.02em;flex-shrink:0;white-space:nowrap}
+.plan-dropdown-item .plan-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+.plan-dropdown-item:hover .plan-item-actions{opacity:1}
+.plan-item-action{width:24px;height:24px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .12s;font-size:14px}
+.plan-item-action:hover{background:var(--sidebar-hover);color:var(--fg)}
+.plan-item-action.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.plan-dropdown-add{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;transition:background .12s;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.plan-dropdown-add:hover{background:var(--accent-subtle);color:var(--accent)}
+.status-draft{background:oklch(93% 0.006 60);color:oklch(50% 0.01 60)}
+.status-active{background:var(--accent-subtle);color:var(--accent)}
+.status-confirmed{background:var(--success-subtle);color:oklch(42% 0.14 150)}
+.status-traveling{background:var(--warn-subtle);color:oklch(48% 0.12 75)}
+.status-done{background:var(--purple-subtle);color:var(--purple)}
+.plan-rename-overlay{position:fixed;inset:0;background:oklch(0% 0 0 / 20%);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:210}
+.plan-rename-overlay.show{display:flex}
+.plan-rename-box{background:var(--surface);border-radius:var(--radius-xl);padding:24px 28px;width:360px;box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+.plan-rename-box h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.plan-rename-box input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font-body);outline:none;margin-bottom:16px}
+.plan-rename-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.plan-rename-box .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+</style>
+</head>
+<body>
+<button class="mobile-menu-btn" id="mobile-menu-btn" onclick="openSidebar()">
+  <svg viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+</button>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="18" height="18" rx="6" fill="var(--accent-subtle)" stroke="var(--accent)" stroke-width="1.2"/><path d="M7 11h8M11 7v8" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+    旅行策划
+  </div>
+  <div class="plan-selector" id="plan-selector">
+    <div class="plan-selector-btn" id="plan-selector-btn" onclick="togglePlanDropdown()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 3V1.5M11 3V1.5M2 6.5h12" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+      <span class="plan-name" id="plan-current-name">东京购物之旅</span>
+      <span class="plan-arrow" id="plan-arrow">▼</span>
+    </div>
+    <div class="plan-dropdown" id="plan-dropdown"></div>
+  </div>
+  <div class="plan-rename-overlay" id="plan-rename-overlay">
+    <div class="plan-rename-box">
+      <h3 id="plan-rename-title">重命名计划</h3>
+      <input id="plan-rename-input" placeholder="计划名称">
+      <div class="modal-actions">
+        <button class="btn" onclick="closePlanRename()">取消</button>
+        <button class="btn btn-primary" onclick="savePlanRename()">保存</button>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-label">规划</div>
+  <div class="sidebar-item active" data-tab="calendar" onclick="switchTab('calendar')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="13" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M3 8.5h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    行程日历
+  </div>
+  <div class="sidebar-item" data-tab="flights" onclick="switchTab('flights')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M2 8h16" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/><path d="M13 5v10M16 7v6M10 7v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    机票对比
+  </div>
+  <div class="sidebar-item" data-tab="destinations" onclick="switchTab('destinations')">
+    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M10 11.5L6.5 17h7L10 11.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10" cy="8" r="1" fill="currentColor" opacity=".3"/></svg>
+    目的地选择
+  </div>
+  <div class="sidebar-item" data-tab="hotels" onclick="switchTab('hotels')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="8" width="14" height="9" rx="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M7 8V6.5a3 3 0 016 0V8" stroke="currentColor" stroke-width="1.3"/><rect x="8.5" y="11" width="3" height="3.5" rx="1" fill="currentColor" opacity=".15"/></svg>
+    酒店评分
+  </div>
+  <div class="sidebar-item" data-tab="expenses" onclick="switchTab('expenses')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M3 7h14M7 4v12M13 4v12" stroke="currentColor" stroke-width="1" opacity=".4"/><text x="10" y="12.5" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" opacity=".5">¥</text></svg>
+    其他消费
+  </div>
+  <div class="sidebar-item" data-tab="itinerary" onclick="switchTab('itinerary')">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12M4 8h8M4 12h10M4 16h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+    每日行程
+  </div>
+  <div class="sidebar-item" data-tab="packing" onclick="switchTab('packing')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="4" y="6" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M7 6V4.5a3 3 0 016 0V6" stroke="currentColor" stroke-width="1.2"/><path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    行李清单
+  </div>
+  <div class="sidebar-item" data-tab="documents" onclick="switchTab('documents')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M7 6h6M7 9h6M7 12h4" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity=".5"/><circle cx="14" cy="14" r="2.5" stroke="currentColor" stroke-width="1.1"/></svg>
+    证件管理
+  </div>
+  <div class="sidebar-item" data-tab="plan-overview" onclick="switchTab('plan-overview')">
+    <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="12" width="7" height="5" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="11" y="12" width="7" height="5" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+    计划总览
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">汇总</div>
+  <div class="sidebar-item" data-tab="summary" onclick="switchTab('summary')">
+    <svg viewBox="0 0 20 20" fill="none"><path d="M4 5h12M4 10h8M4 15h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="16" cy="15" r="2.5" fill="var(--accent)" opacity=".2" stroke="currentColor" stroke-width="1"/></svg>
+    预算总结
+  </div>
+  <div style="flex:1"></div>
+  <div class="sidebar-cover-toggle" onclick="toggleCoverVisibility()">
+    <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><rect x="1" y="3" width="14" height="10" rx="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 10l4-3 3 2 3-4 4 5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+    封面背景
+    <div class="toggle-track" id="cover-toggle"><div class="toggle-thumb" id="cover-toggle-thumb"></div></div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-cover-toggle" onclick="resetAllData()" style="color:var(--danger);opacity:.6">
+    <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    重置数据
+  </div>
+</nav>
+<div class="main">
+  <div class="plan-header" id="plan-header">
+    <span class="plan-header-name" onclick="togglePlanDropdown()" title="切换计划">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 3V1.5M11 3V1.5M2 6.5h12" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+      <span id="plan-header-name">东京购物之旅</span>
+      <span style="font-size:11px;opacity:.4">▼</span>
+    </span>
+    <select class="plan-status-select" id="plan-status-select" onchange="changePlanStatus(this.value)">
+      <option value="draft">草稿</option>
+      <option value="active">进行中</option>
+      <option value="confirmed">已确认</option>
+      <option value="traveling">已出行</option>
+      <option value="done">已完成</option>
+    </select>
+    <div class="plan-header-actions">
+      <button class="plan-header-action" onclick="openPlanRename(activePlanId)" title="重命名计划">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        重命名
+      </button>
+      <button class="plan-header-action danger" onclick="deletePlan(activePlanId)" title="删除计划">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        删除
+      </button>
+    </div>
+    <div class="plan-header-meta" id="plan-header-meta"></div>
+  </div>
+  <div class="cover-wrapper" id="cover-wrapper">
+    <div class="cover" id="cover">
+      <img id="cover-img" src="" alt="" draggable="false">
+      <div class="cover-overlay"></div>
+      <div class="cover-hint">拖动图片调整显示区域</div>
+      <div class="cover-actions">
+        <label class="cover-btn" style="cursor:pointer">更换图片<input type="file" accept="image/*" id="cover-file" style="display:none" onchange="handleCoverUpload(event)"></label>
+        <button class="cover-btn danger" onclick="removeCover()">移除封面</button>
+      </div>
+    </div>
+    <div class="cover-empty" id="cover-empty">
+      <label class="cover-add" style="cursor:pointer">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        添加封面图片
+        <input type="file" accept="image/*" style="display:none" onchange="handleCoverUpload(event)">
+      </label>
+    </div>
+  </div>
+  <div class="section active" id="sec-calendar">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--accent-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="var(--accent)" stroke-width="1.2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round"/></svg></span>行程日历</h1>
+      <p>拖拽行程条调整日期，单击行程条编辑，双击空白日期添加新行程</p>
+    </div>
+    <div class="cal-toolbar">
+      <button onclick="calNav(-1)">← 上月</button>
+      <h2 id="cal-month-label"></h2>
+      <button onclick="calNav(1)">下月 →</button>
+      <button onclick="calToday()">今天</button>
+      <div class="cal-legend" id="cal-legend"></div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="timeline" id="timeline">
+      <h3>时间轴</h3>
+      <div class="timeline-bar" id="timeline-bar"></div>
+      <div class="timeline-labels" id="timeline-labels"></div>
+      <div class="timeline-vertical" id="timeline-vertical"></div>
+    </div>
+  </div>
+  <div class="section" id="sec-plan-overview">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--accent-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="2" width="6" height="5.5" rx="1.5" stroke="var(--accent)" stroke-width="1.1"/><rect x="9" y="2" width="6" height="5.5" rx="1.5" stroke="var(--accent)" stroke-width="1.1"/><rect x="1" y="9.5" width="6" height="4.5" rx="1.5" stroke="var(--accent)" stroke-width="1.1"/><rect x="9" y="9.5" width="6" height="4.5" rx="1.5" stroke="var(--accent)" stroke-width="1.1"/></svg></span>计划总览</h1>
+      <p>查看所有旅行计划，勾选后可对比关键指标。点击卡片进入该计划</p>
+    </div>
+    <div class="plan-cards" id="plan-cards"></div>
+  </div>
+  <div class="section" id="sec-itinerary">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--accent-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3h10M3 7h6M3 11h8M3 15h4" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round"/></svg></span>每日行程</h1>
+      <p>规划每天的具体安排，点击日期展开查看，拖拽排序活动</p>
+    </div>
+    <div id="itinerary-days"></div>
+  </div>
+  <div class="section" id="sec-flights">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--teal-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="8" rx="1.5" stroke="var(--teal)" stroke-width="1.1"/><path d="M1.5 6.5h13" stroke="var(--teal)" stroke-width=".8" stroke-dasharray="1.5 1.5"/><path d="M10.5 4v8M13 5.5v5M8 5.5v5" stroke="var(--teal)" stroke-width="1" stroke-linecap="round"/></svg></span>机票价格对比</h1>
+      <p>勾选已确定的航班，价格将计入预算总结。可自定义评估维度</p>
+    </div>
+    <div class="table-wrap">
+      <table id="flights-table-full">
+        <thead id="flights-thead"></thead>
+        <tbody id="flights-body"></tbody>
+      </table>
+    </div>
+    <div id="flights-cards"></div>
+    <div class="table-actions">
+      <button class="btn-sm" onclick="addFlight()">+ 添加航班</button>
+      <button class="btn-sm" onclick="openFlightCriteriaModal()">+ 添加评估维度</button>
+    </div>
+  </div>
+  <div class="section" id="sec-destinations">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--coral-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6.5" r="3" stroke="var(--coral)" stroke-width="1.1"/><path d="M8 9.5L5 14.5h6L8 9.5z" stroke="var(--coral)" stroke-width="1" stroke-linejoin="round"/><circle cx="8" cy="6.5" r="1" fill="var(--coral)" opacity=".3"/></svg></span>目的地选择</h1>
+      <p>评估各目的地的优缺点，勾选最终选择的目的地</p>
+    </div>
+    <div class="table-wrap" style="overflow-x:auto">
+      <table id="destinations-table">
+        <thead id="destinations-thead"></thead>
+        <tbody id="destinations-body"></tbody>
+      </table>
+    </div>
+    <div id="destinations-cards"></div>
+    <div class="table-actions">
+      <button class="btn-sm" onclick="addDestination()">+ 添加目的地</button>
+      <button class="btn-sm" onclick="openDestCriteriaModal()">+ 添加评估维度</button>
+    </div>
+  </div>
+  <div class="section" id="sec-packing">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--success-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="5" width="10" height="8.5" rx="1.5" stroke="var(--success)" stroke-width="1.1"/><path d="M5.5 5V3.5a2.5 2.5 0 015 0V5" stroke="var(--success)" stroke-width="1.1"/><path d="M5.5 9l2 2 3.5-3.5" stroke="var(--success)" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></span>行李清单</h1>
+      <p>出发前逐项检查，已打包的物品会自动标记</p>
+    </div>
+    <div class="packing-progress" id="packing-progress"></div>
+    <div id="packing-categories"></div>
+  </div>
+  <div class="section" id="sec-expenses">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--warn-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="var(--warn)" stroke-width="1.1"/><path d="M2 6h12" stroke="var(--warn)" stroke-width=".8"/><text x="8" y="11" text-anchor="middle" font-size="6" font-weight="700" fill="var(--warn)" opacity=".6">¥</text></svg></span>其他消费</h1>
+      <p>记录门票、餐饮、设备租赁等消费，勾选后计入预算总结</p>
+    </div>
+    <div class="table-wrap">
+      <table id="expenses-table">
+        <thead>
+          <tr>
+            <th class="select-cell">选定</th>
+            <th>项目名称</th><th>类别</th><th>金额 (¥)</th><th>状态</th><th>备注</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="expenses-body"></tbody>
+      </table>
+    </div>
+    <div id="expenses-cards"></div>
+    <div class="table-actions">
+      <button class="btn-sm" onclick="addExpense()">+ 添加消费</button>
+    </div>
+  </div>
+  <div class="section" id="sec-documents">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--teal-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="12" height="13" rx="2" stroke="var(--teal)" stroke-width="1.1"/><path d="M5 5h6M5 7.5h6M5 10h3" stroke="var(--teal)" stroke-width=".8" stroke-linecap="round" opacity=".5"/><circle cx="12" cy="12" r="2" stroke="var(--teal)" stroke-width="1"/></svg></span>证件管理</h1>
+      <p>记录护照、签证、保险等证件信息，出发前检查有效期</p>
+    </div>
+    <div class="doc-cards" id="doc-cards"></div>
+    <button class="doc-add-btn" onclick="addDocument()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      添加证件
+    </button>
+  </div>
+  <div class="section" id="sec-hotels">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--purple-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="6" width="12" height="7.5" rx="2" stroke="var(--purple)" stroke-width="1.1"/><path d="M5.5 6V5a2.5 2.5 0 015 0V6" stroke="var(--purple)" stroke-width="1.1"/></svg></span>酒店评分</h1>
+      <p>勾选最终选择的酒店，价格将计入预算总结。点击星星评分，维度名称可编辑</p>
+    </div>
+    <div class="table-wrap" style="overflow-x:auto">
+      <table id="hotels-table">
+        <thead id="hotels-thead"></thead>
+        <tbody id="hotels-body"></tbody>
+      </table>
+    </div>
+    <div id="hotels-cards"></div>
+    <div class="table-actions">
+      <button class="btn-sm" onclick="addHotel()">+ 添加酒店</button>
+      <button class="btn-sm" onclick="openCriteriaModal()">+ 添加评分维度</button>
+    </div>
+  </div>
+  <div class="section" id="sec-summary">
+    <div class="section-header">
+      <h1><span class="header-icon" style="background:var(--success-subtle)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h6M3 12h8" stroke="var(--success)" stroke-width="1.3" stroke-linecap="round"/><circle cx="13" cy="12" r="2" fill="var(--success)" opacity=".2" stroke="var(--success)" stroke-width="1"/></svg></span>预算总结</h1>
+      <p>汇总所有已勾选项目的费用与待办事项</p>
+    </div>
+    <div class="summary-grid" id="summary-cards"></div>
+    <div id="dest-summary"></div>
+    <div class="section-divider"><span>待办清单</span></div>
+    <div class="checklist" id="checklist">
+      <div class="checklist-header">
+        待办事项
+        <button class="btn-sm" onclick="addCheckItem()">+ 添加</button>
+      </div>
+      <div id="checklist-items"></div>
+    </div>
+    <div class="itinerary" id="itinerary-summary"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="trip-modal">
+  <div class="modal">
+    <h3 id="trip-modal-title">添加行程</h3>
+    <input type="hidden" id="trip-edit-id" value="">
+    <label>行程名称</label>
+    <input id="trip-name" placeholder="例如：抵达东京">
+    <label>开始日期</label>
+    <input id="trip-start" type="date">
+    <label>结束日期</label>
+    <input id="trip-end" type="date">
+    <label>颜色标签</label>
+    <select id="trip-color">
+      <option value="oklch(56% 0.2 265)">蓝色</option>
+      <option value="oklch(60% 0.18 150)">绿色</option>
+      <option value="oklch(66% 0.16 55)">橙色</option>
+      <option value="oklch(56% 0.18 300)">紫色</option>
+      <option value="oklch(58% 0.2 25)">红色</option>
+      <option value="oklch(58% 0.12 185)">青色</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-delete-link" id="trip-modal-delete" onclick="deleteFromModal()" style="display:none">删除此行程</button>
+      <button class="btn" onclick="closeTripModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveTrip()">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="criteria-modal">
+  <div class="modal">
+    <h3>添加评分维度</h3>
+    <label>维度名称</label>
+    <input id="criteria-name" placeholder="例如：早餐质量、泳池、隔音…">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCriteriaModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveCriteria()">添加</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="dest-criteria-modal">
+  <div class="modal">
+    <h3>添加评估维度</h3>
+    <label>维度名称</label>
+    <input id="dest-criteria-name" placeholder="例如：签证难度、语言环境…">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeDestCriteriaModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveDestCriteria()">添加</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="flight-criteria-modal">
+  <div class="modal">
+    <h3>添加评估维度</h3>
+    <label>维度名称</label>
+    <input id="flight-criteria-name" placeholder="例如：中转次数、行李额度…">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeFlightCriteriaModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveFlightCriteria()">添加</button>
+    </div>
+  </div>
+</div>
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div class="trip-name-detail" id="trip-name-detail" onclick="closeTripDetail()">
+  <div class="trip-name-detail-box" onclick="event.stopPropagation()">
+    <div class="trip-name-detail-title" id="trip-detail-title"></div>
+    <div class="trip-name-detail-dates" id="trip-detail-dates"></div>
+    <button class="trip-name-detail-close" onclick="closeTripDetail()">关闭</button>
+  </div>
+</div>
+<div class="compare-bar" id="compare-bar">
+  <div class="compare-bar-header">
+    <span class="compare-bar-title" id="compare-bar-title">计划对比</span>
+    <button class="compare-bar-close" onclick="closeCompareBar()">✕</button>
+  </div>
+  <div id="compare-content"></div>
+</div>
+<div class="modal-overlay" id="itinerary-modal">
+  <div class="modal itinerary-modal">
+    <h3 id="itinerary-modal-title">添加活动</h3>
+    <input type="hidden" id="itinerary-edit-id" value="">
+    <input type="hidden" id="itinerary-day-date" value="">
+    <label>时间</label>
+    <input id="itinerary-time" type="time" value="09:00">
+    <label>活动名称</label>
+    <input id="itinerary-title" placeholder="例如：参观浅草寺">
+    <label>地点</label>
+    <input id="itinerary-location" placeholder="例如：浅草">
+    <label>类型</label>
+    <select id="itinerary-type">
+      <option value="sight">景点</option>
+      <option value="food">餐饮</option>
+      <option value="transport">交通</option>
+      <option value="hotel">住宿</option>
+      <option value="other">其他</option>
+    </select>
+    <label>时长（分钟）</label>
+    <input id="itinerary-duration" type="number" value="60" min="15" step="15">
+    <label>备注</label>
+    <input id="itinerary-notes" placeholder="可选">
+    <div class="modal-actions">
+      <button class="modal-delete-link" id="itinerary-modal-delete" onclick="deleteItineraryFromModal()" style="display:none">删除此活动</button>
+      <button class="btn" onclick="closeItineraryModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveItineraryItem()">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="doc-modal">
+  <div class="modal">
+    <h3 id="doc-modal-title">添加证件</h3>
+    <input type="hidden" id="doc-edit-id" value="">
+    <label>证件名称</label>
+    <input id="doc-name" placeholder="例如：护照">
+    <label>证件类型</label>
+    <select id="doc-type">
+      <option value="passport">护照</option>
+      <option value="visa">签证</option>
+      <option value="insurance">保险</option>
+      <option value="booking">预订确认</option>
+      <option value="other">其他</option>
+    </select>
+    <label>证件号码</label>
+    <input id="doc-number" placeholder="可选">
+    <label>有效期</label>
+    <input id="doc-expiry" type="date">
+    <label>状态</label>
+    <select id="doc-status">
+      <option value="valid">有效</option>
+      <option value="expiring">即将过期</option>
+      <option value="expired">已过期</option>
+      <option value="processing">办理中</option>
+      <option value="none">未办理</option>
+    </select>
+    <label>备注</label>
+    <input id="doc-notes" placeholder="可选">
+    <div class="modal-actions">
+      <button class="modal-delete-link" id="doc-modal-delete" onclick="deleteDocFromModal()" style="display:none">删除此证件</button>
+      <button class="btn" onclick="closeDocModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveDocument()">保存</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const TODAY = new Date(2026, 4, 9);
+let calYear = 2026, calMonth = 4;
+let trips = [
+  { id: 1, name: '东京购物之旅', start: '2026-05-18', end: '2026-05-22', color: 'oklch(56% 0.2 265)' },
+  { id: 2, name: '京都赏樱', start: '2026-05-10', end: '2026-05-13', color: 'oklch(60% 0.18 150)' },
+  { id: 3, name: '大阪美食', start: '2026-05-14', end: '2026-05-15', color: 'oklch(66% 0.16 55)' },
+];
+let flightCriteria = ['中转', '行李额度', '准点率', '舒适度'];
+let flights = [
+  { id: 1, airline: '全日空航空', code: 'NH919', route: '上海 → 东京', dep: '08:30', arr: '12:45', price: 3280, cls: '经济舱', status: 'booked', selected: true, notes: { 0: '直飞', 1: '23kg', 2: '高', 3: '好' } },
+  { id: 2, airline: '春秋航空', code: '9C6215', route: '东京 → 上海', dep: '19:00', arr: '21:30', price: 1899, cls: '经济舱', status: 'pending', selected: false, notes: { 0: '直飞', 1: '15kg', 2: '中', 3: '一般' } },
+  { id: 3, airline: '吉祥航空', code: 'HO1335', route: '上海 → 大阪', dep: '10:15', arr: '14:00', price: 2450, cls: '经济舱', status: 'compare', selected: false, notes: { 0: '经停', 1: '20kg', 2: '中', 3: '中' } },
+];
+let destCriteria = ['景色', '文化', '美食', '交通便利', '安全性', '性价比'];
+let destinations = [
+  { id: 1, name: '东京', country: '日本', notes: '购物天堂，交通便利', scores: [4, 4, 5, 5, 5, 4], selected: true },
+  { id: 2, name: '京都', country: '日本', notes: '古都风情，文化深厚', scores: [5, 5, 4, 3, 5, 4], selected: false },
+  { id: 3, name: '大阪', country: '日本', notes: '美食之都，物价友好', scores: [3, 3, 5, 4, 5, 5], selected: false },
+];
+let hotelCriteria = ['性价比', '位置', '卫生', '设施', '服务'];
+let hotels = [
+  { id: 1, name: '东京新宿酒店', location: '新宿', price: '¥680/晚', priceNum: 680, scores: [4, 5, 4, 4, 3], selected: true, status: 'booked' },
+  { id: 2, name: '浅草旅馆', location: '浅草', price: '¥420/晚', priceNum: 420, scores: [5, 3, 3, 3, 4], selected: false, status: 'pending' },
+  { id: 3, name: '银座高端酒店', location: '银座', price: '¥1200/晚', priceNum: 1200, scores: [3, 5, 5, 5, 5], selected: false, status: 'pending' },
+];
+const EXPENSE_CATEGORIES = ['门票', '餐饮', '设备租赁', '交通', '购物', '其他'];
+let expenses = [
+  { id: 1, name: '东京迪士尼门票', category: '门票', amount: 580, note: '成人一日票', selected: true, status: 'paid', actual: 580 },
+  { id: 2, name: '和服体验租赁', category: '设备租赁', amount: 350, note: '京都寺庙拍照', selected: true, status: 'pending', actual: 0 },
+  { id: 3, name: '寿司之神预约', category: '餐饮', amount: 1200, note: '数寄屋桥次郎', selected: false, status: 'pending', actual: 0 },
+];
+let checklistItems = [
+  { id: 1, text: '购买上海→东京机票', done: true },
+  { id: 2, text: '购买东京→上海机票', done: false },
+  { id: 3, text: '预订东京新宿酒店', done: false },
+  { id: 4, text: '办理日本签证', done: true },
+  { id: 5, text: '购买旅行保险', done: false },
+  { id: 6, text: '兑换日元', done: false },
+  { id: 7, text: '购买迪士尼门票', done: false },
+];
+let nextId = { trip: 4, flight: 4, dest: 4, expense: 4, hotel: 4, check: 8 };
+
+// ===== Multi-Plan Management =====
+const PLAN_STATUSES = {
+  draft: { label: '草稿', cls: 'status-draft' },
+  active: { label: '进行中', cls: 'status-active' },
+  confirmed: { label: '已确认', cls: 'status-confirmed' },
+  traveling: { label: '已出行', cls: 'status-traveling' },
+  done: { label: '已完成', cls: 'status-done' }
+};
+const STATUS_ORDER = ['draft', 'active', 'confirmed', 'traveling', 'done'];
+
+let plans = {};
+let activePlanId = 'plan-1';
+let planIdCounter = 3;
+let renamingPlanId = null;
+
+function initPlans() {
+  plans = {
+    'plan-1': {
+      id: 'plan-1', name: '东京购物之旅', status: 'active',
+      itineraryItems: [
+        { id: 1, date: '2026-05-18', time: '10:00', title: '抵达成田机场', location: '成田', type: 'transport', duration: 60, notes: '取行李、买西瓜卡' },
+        { id: 2, date: '2026-05-18', time: '14:00', title: '酒店入住', location: '新宿', type: 'hotel', duration: 30, notes: '' },
+        { id: 3, date: '2026-05-18', time: '16:00', title: '新宿逛街', location: '新宿', type: 'sight', duration: 180, notes: '歌舞伎町、百货商场' },
+        { id: 4, date: '2026-05-19', time: '09:00', title: '浅草寺', location: '浅草', type: 'sight', duration: 120, notes: '雷门拍照' },
+        { id: 5, date: '2026-05-19', time: '12:00', title: '午餐：天妇罗', location: '浅草', type: 'food', duration: 60, notes: '' },
+        { id: 6, date: '2026-05-19', time: '14:00', title: '秋叶原', location: '秋叶原', type: 'sight', duration: 180, notes: '电器街、动漫周边' },
+        { id: 7, date: '2026-05-20', time: '09:00', title: '东京迪士尼', location: '迪士尼', type: 'sight', duration: 600, notes: '全天游玩' },
+      ],
+      packingItems: [
+        { id: 1, name: '护照', category: '证件', packed: true },
+        { id: 2, name: '签证复印件', category: '证件', packed: true },
+        { id: 3, name: '机票行程单', category: '证件', packed: false },
+        { id: 4, name: 'T恤 x5', category: '衣物', packed: false },
+        { id: 5, name: '牛仔裤 x2', category: '衣物', packed: false },
+        { id: 6, name: '内衣裤 x5', category: '衣物', packed: false },
+        { id: 7, name: '充电器', category: '电子设备', packed: true },
+        { id: 8, name: '充电宝', category: '电子设备', packed: false },
+        { id: 9, name: '转换插头', category: '电子设备', packed: false },
+        { id: 10, name: '牙刷', category: '洗漱用品', packed: false },
+        { id: 11, name: '防晒霜', category: '洗漱用品', packed: false },
+        { id: 12, name: '感冒药', category: '药品', packed: false },
+      ],
+      documents: [
+        { id: 1, name: '护照', type: 'passport', number: 'E12345678', expiry: '2030-06-15', status: 'valid', notes: '' },
+        { id: 2, name: '日本单次签证', type: 'visa', number: '', expiry: '2026-12-31', status: 'valid', notes: '单次入境，15天' },
+        { id: 3, name: '旅行保险', type: 'insurance', number: 'INS-2026-001', expiry: '2026-05-22', status: 'valid', notes: '含医疗和行李丢失' },
+      ],
+      trips: JSON.parse(JSON.stringify(trips)),
+      flights: JSON.parse(JSON.stringify(flights)),
+      flightCriteria: JSON.parse(JSON.stringify(flightCriteria)),
+      destinations: JSON.parse(JSON.stringify(destinations)),
+      destCriteria: JSON.parse(JSON.stringify(destCriteria)),
+      hotels: JSON.parse(JSON.stringify(hotels)),
+      hotelCriteria: JSON.parse(JSON.stringify(hotelCriteria)),
+      expenses: JSON.parse(JSON.stringify(expenses)),
+      checklistItems: JSON.parse(JSON.stringify(checklistItems)),
+      nextId: JSON.parse(JSON.stringify(nextId))
+    },
+    'plan-2': {
+      id: 'plan-2', name: '京都周末行', status: 'draft',
+      itineraryItems: [
+        { id: 1, date: '2026-06-01', time: '08:00', title: '新干线出发', location: '东京站', type: 'transport', duration: 150, notes: 'N700 自由席' },
+        { id: 2, date: '2026-06-01', time: '12:00', title: '金阁寺', location: '京都', type: 'sight', duration: 120, notes: '' },
+        { id: 3, date: '2026-06-02', time: '09:00', title: '伏见稻荷大社', location: '伏见', type: 'sight', duration: 180, notes: '千本鸟居' },
+        { id: 4, date: '2026-06-02', time: '14:00', title: '抹茶体验', location: '祇园', type: 'food', duration: 90, notes: '茶道体验' },
+      ],
+      packingItems: [
+        { id: 1, name: '护照', category: '证件', packed: false },
+        { id: 2, name: '换洗衣物', category: '衣物', packed: false },
+        { id: 3, name: '充电器', category: '电子设备', packed: false },
+      ],
+      documents: [
+        { id: 1, name: '护照', type: 'passport', number: 'E12345678', expiry: '2030-06-15', status: 'valid', notes: '' },
+      ],
+      trips: [
+        { id: 1, name: '新干线抵达京都', start: '2026-06-01', end: '2026-06-01', color: 'oklch(58% 0.12 185)' },
+        { id: 2, name: '京都寺庙巡礼', start: '2026-06-02', end: '2026-06-03', color: 'oklch(56% 0.18 300)' },
+      ],
+      flights: [
+        { id: 1, airline: '新干线', code: 'N700', route: '东京 → 京都', dep: '08:00', arr: '10:15', price: 13500, cls: '自由席', status: 'compare', selected: false, notes: { 0: '2小时15分', 1: '无限制', 2: '极高', 3: '好' } },
+      ],
+      flightCriteria: ['时长', '行李额度', '准点率', '舒适度'],
+      destinations: [
+        { id: 1, name: '京都', country: '日本', notes: '古都风情，寺庙众多', scores: [5, 5, 4, 4, 5, 3], selected: true },
+      ],
+      destCriteria: ['景色', '文化', '美食', '交通便利', '安全性', '性价比'],
+      hotels: [
+        { id: 1, name: '京都町屋民宿', location: '祇园', price: '¥580/晚', priceNum: 580, scores: [4, 5, 4, 3, 5], selected: true },
+      ],
+      hotelCriteria: ['性价比', '位置', '卫生', '设施', '服务'],
+      expenses: [
+        { id: 1, name: '金阁寺门票', category: '门票', amount: 40, note: '', selected: true },
+        { id: 2, name: '抹茶体验', category: '餐饮', amount: 200, note: '茶道体验', selected: true },
+      ],
+      checklistItems: [
+        { id: 1, text: '预订新干线车票', done: false },
+        { id: 2, text: '预订京都町屋民宿', done: false },
+        { id: 3, text: '查看寺庙开放时间', done: false },
+      ],
+      nextId: { trip: 3, flight: 2, dest: 2, expense: 3, hotel: 2, check: 4 }
+    }
+  };
+  activePlanId = 'plan-1';
+  planIdCounter = 3;
+}
+
+function getActivePlan() { return plans[activePlanId]; }
+
+let itineraryItems = [];
+let packingItems = [];
+let documents = [];
+
+function syncToPlan() {
+  const p = plans[activePlanId];
+  if (!p) return;
+  p.trips = JSON.parse(JSON.stringify(trips));
+  p.flights = JSON.parse(JSON.stringify(flights));
+  p.flightCriteria = JSON.parse(JSON.stringify(flightCriteria));
+  p.destinations = JSON.parse(JSON.stringify(destinations));
+  p.destCriteria = JSON.parse(JSON.stringify(destCriteria));
+  p.hotels = JSON.parse(JSON.stringify(hotels));
+  p.hotelCriteria = JSON.parse(JSON.stringify(hotelCriteria));
+  p.expenses = JSON.parse(JSON.stringify(expenses));
+  p.checklistItems = JSON.parse(JSON.stringify(checklistItems));
+  p.nextId = JSON.parse(JSON.stringify(nextId));
+  p.itineraryItems = JSON.parse(JSON.stringify(itineraryItems));
+  p.packingItems = JSON.parse(JSON.stringify(packingItems));
+  p.documents = JSON.parse(JSON.stringify(documents));
+}
+
+function loadPlan(planId) {
+  activePlanId = planId;
+  const p = plans[planId];
+  trips = p.trips;
+  flights = p.flights;
+  flightCriteria = p.flightCriteria;
+  destinations = p.destinations;
+  destCriteria = p.destCriteria;
+  hotels = p.hotels;
+  hotelCriteria = p.hotelCriteria;
+  expenses = p.expenses;
+  checklistItems = p.checklistItems;
+  nextId = p.nextId;
+  itineraryItems = p.itineraryItems || [];
+  packingItems = p.packingItems || [];
+  documents = p.documents || [];
+}
+
+function switchPlan(planId) {
+  if (planId === activePlanId) { closePlanDropdown(); return; }
+  syncToPlan();
+  savePlansData();
+  loadPlan(planId);
+  renderCalendar();
+  renderFlights();
+  renderDestinations();
+  renderExpenses();
+  renderHotels();
+  updatePlanSelector();
+  closePlanDropdown();
+  toast('已切换到：' + plans[planId].name);
+}
+
+
+
+function changePlanStatus(status) {
+  const p = getActivePlan();
+  p.status = status;
+  updatePlanSelector();
+  savePlansData();
+  toast('状态已更新：' + (PLAN_STATUSES[status] || {}).label);
+}
+function updateStatusSelectStyle() {
+  const sel = document.getElementById('plan-status-select');
+  if (!sel) return;
+  sel.className = 'plan-status-select ' + (PLAN_STATUSES[sel.value] || {}).cls;
+}
+
+function updatePlanHeader() {
+  const p = getActivePlan();
+  document.getElementById('plan-header-name').textContent = p.name;
+  document.getElementById('plan-status-select').value = p.status || 'draft';
+  updateStatusSelectStyle();
+  // Update meta info
+  const meta = document.getElementById('plan-header-meta');
+  const tripCount = (p.trips || []).length;
+  const nights = (p.trips || []).reduce((s, t) => s + daysBetween(parseDate(t.start), parseDate(t.end)), 0);
+  meta.innerHTML = '<span>' + tripCount + ' 段行程</span><span>' + nights + ' 晚</span>';
+}
+function updatePlanSelector() {
+  const p = getActivePlan();
+  document.getElementById('plan-current-name').textContent = p.name;
+  renderPlanDropdown();
+  updatePlanHeader();
+}
+
+function togglePlanDropdown() {
+  const dd = document.getElementById('plan-dropdown');
+  const btn = document.getElementById('plan-selector-btn');
+  const arrow = document.getElementById('plan-arrow');
+  if (dd.classList.contains('show')) {
+    closePlanDropdown();
+  } else {
+    renderPlanDropdown();
+    dd.classList.add('show');
+    btn.classList.add('open');
+  }
+}
+
+function closePlanDropdown() {
+  document.getElementById('plan-dropdown').classList.remove('show');
+  document.getElementById('plan-selector-btn').classList.remove('open');
+}
+
+function renderPlanDropdown() {
+  const dd = document.getElementById('plan-dropdown');
+  dd.innerHTML = '';
+  Object.values(plans).forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'plan-dropdown-item' + (p.id === activePlanId ? ' active' : '');
+    const status = PLAN_STATUSES[p.status] || PLAN_STATUSES.draft;
+    item.innerHTML = '<span class="plan-item-name">' + p.name + '</span>' +
+      '<span class="plan-item-status ' + status.cls + '">' + status.label + '</span>' +
+      '';
+    item.addEventListener('click', () => switchPlan(p.id));
+    dd.appendChild(item);
+  });
+  const addBtn = document.createElement('div');
+  addBtn.className = 'plan-dropdown-add';
+  addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> 新建空白计划';
+  addBtn.addEventListener('click', () => { closePlanDropdown(); createNewPlan(); });
+  dd.appendChild(addBtn);
+  const copyBtn = document.createElement('div');
+  copyBtn.className = 'plan-dropdown-add';
+  copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="4" y="4" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M3 12V3h9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg> 从当前计划复制';
+  copyBtn.addEventListener('click', () => { closePlanDropdown(); copyCurrentPlan(); });
+  dd.appendChild(copyBtn);
+}
+
+function createNewPlan() {
+  syncToPlan();
+  const id = 'plan-' + (planIdCounter++);
+  plans[id] = {
+    id, name: '新计划', status: 'draft',
+    trips: [], flights: [], flightCriteria: ['中转', '行李额度', '准点率', '舒适度'],
+    destinations: [], destCriteria: ['景色', '文化', '美食', '交通便利', '安全性', '性价比'],
+    hotels: [], hotelCriteria: ['性价比', '位置', '卫生', '设施', '服务'],
+    expenses: [], checklistItems: [],
+    nextId: { trip: 1, flight: 1, dest: 1, expense: 1, hotel: 1, check: 1 },
+      itineraryItems: [], packingItems: [], documents: []
+  };
+  switchPlan(id);
+  toast('新计划已创建');
+}
+
+function copyCurrentPlan() {
+  syncToPlan();
+  const src = plans[activePlanId];
+  const id = 'plan-' + (planIdCounter++);
+  plans[id] = JSON.parse(JSON.stringify(src));
+  plans[id].id = id;
+  plans[id].name = src.name + ' (副本)';
+  plans[id].status = 'draft';
+  switchPlan(id);
+  toast('已复制计划');
+}
+
+function deletePlan(planId) {
+  const count = Object.keys(plans).length;
+  if (count <= 1) { toast('至少保留一个计划'); return; }
+  const name = plans[planId].name;
+  if (!confirm('确定删除计划「' + name + '」吗？')) return;
+  delete plans[planId];
+  if (activePlanId === planId) {
+    const firstId = Object.keys(plans)[0];
+    loadPlan(firstId);
+    renderCalendar(); renderFlights(); renderDestinations(); renderExpenses(); renderHotels();
+  }
+  updatePlanSelector();
+  savePlansData();
+  toast('已删除：' + name);
+}
+
+function cyclePlanStatus(planId) {
+  const p = plans[planId];
+  const idx = STATUS_ORDER.indexOf(p.status);
+  p.status = STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
+  if (planId === activePlanId) updatePlanSelector();
+  else renderPlanDropdown();
+  savePlansData();
+}
+
+function openPlanRename(planId) {
+  renamingPlanId = planId;
+  document.getElementById('plan-rename-title').textContent = '重命名计划';
+  document.getElementById('plan-rename-input').value = plans[planId].name;
+  document.getElementById('plan-rename-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('plan-rename-input').focus(), 100);
+}
+
+function closePlanRename() {
+  document.getElementById('plan-rename-overlay').classList.remove('show');
+  renamingPlanId = null;
+}
+
+function savePlanRename() {
+  if (!renamingPlanId) return;
+  const name = document.getElementById('plan-rename-input').value.trim();
+  if (!name) { toast('请输入计划名称'); return; }
+  plans[renamingPlanId].name = name;
+  updatePlanSelector();
+  savePlansData();
+  closePlanRename();
+  toast('已重命名');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#plan-selector')) closePlanDropdown();
+});
+
+// ===== localStorage for Plans =====
+const PLANS_STORAGE_KEY = 'travel-planner-plans';
+
+function savePlansData() {
+  try {
+    syncToPlan();
+    localStorage.setItem(PLANS_STORAGE_KEY, JSON.stringify({
+      plans, activePlanId, planIdCounter
+    }));
+  } catch(e) { console.warn('Plans save failed:', e); }
+}
+
+function loadPlansData() {
+  try {
+    const raw = localStorage.getItem(PLANS_STORAGE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (d.plans && Object.keys(d.plans).length) {
+      plans = d.plans;
+      activePlanId = d.activePlanId || Object.keys(plans)[0];
+      planIdCounter = d.planIdCounter || Object.keys(plans).length + 1;
+      loadPlan(activePlanId);
+      return true;
+    }
+  } catch(e) { console.warn('Plans load failed:', e); }
+  return false;
+}
+
+function resetAllData() {
+  if (!confirm('确定要重置所有数据吗？此操作将清除所有计划和修改。')) return;
+  localStorage.removeItem(PLANS_STORAGE_KEY);
+  localStorage.removeItem('tp-cover');
+  localStorage.removeItem('tp-cover-pos');
+  localStorage.removeItem('tp-cover-visible');
+  location.reload();
+}
+
+
+
+// ===== Itinerary Functions =====
+let itineraryNextId = 8;
+let itineraryCollapsed = {};
+
+function renderItinerary() {
+  const container = document.getElementById('itinerary-days');
+  container.innerHTML = '';
+  // Group items by date
+  const dayMap = {};
+  itineraryItems.forEach(item => {
+    if (!dayMap[item.date]) dayMap[item.date] = [];
+    dayMap[item.date].push(item);
+  });
+  // Also add empty days from trips
+  const plan = getActivePlan();
+  (plan.trips || []).forEach(trip => {
+    let d = new Date(parseDate(trip.start));
+    const end = parseDate(trip.end);
+    while (d <= end) {
+      const ds = fmtDate(d);
+      if (!dayMap[ds]) dayMap[ds] = [];
+      d.setDate(d.getDate() + 1);
+    }
+  });
+  const sortedDates = Object.keys(dayMap).sort();
+  if (sortedDates.length === 0) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">暂无行程安排。请先在「行程日历」中添加行程，再回来规划每日活动。</div>';
+    return;
+  }
+  sortedDates.forEach(date => {
+    const items = dayMap[date].sort((a, b) => a.time.localeCompare(b.time));
+    const d = parseDate(date);
+    const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const dayName = dayNames[d.getDay()];
+    const isCollapsed = itineraryCollapsed[date] || false;
+
+    const card = document.createElement('div');
+    card.className = 'itinerary-day-card';
+    card.innerHTML = '<div class="itinerary-day-header" onclick="toggleItineraryDay(\'' + date + '\')">' +
+      '<span>' + date + ' ' + dayName + '</span>' +
+      '<span class="day-date">' + items.length + ' 项活动</span>' +
+      '<span class="day-toggle ' + (isCollapsed ? '' : 'open') + '">▼</span>' +
+    '</div><div class="itinerary-day-body ' + (isCollapsed ? 'collapsed' : '') + '" id="itin-day-' + date + '"></div>';
+
+    const body = card.querySelector('.itinerary-day-body');
+    items.forEach(item => {
+      const typeLabels = { sight: '景点', food: '餐饮', transport: '交通', hotel: '住宿', other: '其他' };
+      const typeColors = { sight: 'oklch(56% 0.2 265)', food: 'oklch(66% 0.16 55)', transport: 'oklch(58% 0.12 185)', hotel: 'oklch(56% 0.16 300)', other: 'oklch(52% 0.012 60)' };
+      const el = document.createElement('div');
+      el.className = 'itinerary-item';
+      el.innerHTML = '<span class="itinerary-time">' + item.time + '</span>' +
+        '<span class="itinerary-dot" style="background:' + (typeColors[item.type] || typeColors.other) + '"></span>' +
+        '<div class="itinerary-content">' +
+          '<div class="itinerary-title">' + item.title + '</div>' +
+          '<div class="itinerary-meta">' +
+            '<span class="itinerary-type-badge type-' + item.type + '">' + (typeLabels[item.type] || item.type) + '</span>' +
+            (item.location ? '<span>' + item.location + '</span>' : '') +
+            '<span>' + item.duration + '分钟</span>' +
+            (item.notes ? '<span>' + item.notes + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="itinerary-actions">' +
+          '<button class="itinerary-action" onclick="editItineraryItem(' + item.id + ')">✎</button>' +
+          '<button class="itinerary-action danger" onclick="deleteItineraryItem(' + item.id + ')">×</button>' +
+        '</div>';
+      body.appendChild(el);
+    });
+    // Add button
+    const addEl = document.createElement('div');
+    addEl.className = 'itinerary-add';
+    addEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> 添加活动';
+    addEl.onclick = function() { openItineraryModal(date); };
+    body.appendChild(addEl);
+    container.appendChild(card);
+  });
+}
+
+function toggleItineraryDay(date) {
+  itineraryCollapsed[date] = !itineraryCollapsed[date];
+  renderItinerary();
+}
+
+function openItineraryModal(date, itemId) {
+  document.getElementById('itinerary-edit-id').value = '';
+  document.getElementById('itinerary-day-date').value = date;
+  document.getElementById('itinerary-time').value = '09:00';
+  document.getElementById('itinerary-title').value = '';
+  document.getElementById('itinerary-location').value = '';
+  document.getElementById('itinerary-type').value = 'sight';
+  document.getElementById('itinerary-duration').value = '60';
+  document.getElementById('itinerary-notes').value = '';
+  document.getElementById('itinerary-modal-delete').style.display = 'none';
+  document.getElementById('itinerary-modal-title').textContent = '添加活动 — ' + date;
+  document.getElementById('itinerary-modal').classList.add('show');
+  document.getElementById('itinerary-title').focus();
+}
+
+function editItineraryItem(id) {
+  const item = itineraryItems.find(x => x.id === id);
+  if (!item) return;
+  document.getElementById('itinerary-edit-id').value = item.id;
+  document.getElementById('itinerary-day-date').value = item.date;
+  document.getElementById('itinerary-time').value = item.time;
+  document.getElementById('itinerary-title').value = item.title;
+  document.getElementById('itinerary-location').value = item.location || '';
+  document.getElementById('itinerary-type').value = item.type;
+  document.getElementById('itinerary-duration').value = item.duration;
+  document.getElementById('itinerary-notes').value = item.notes || '';
+  document.getElementById('itinerary-modal-delete').style.display = '';
+  document.getElementById('itinerary-modal-title').textContent = '编辑活动';
+  document.getElementById('itinerary-modal').classList.add('show');
+}
+
+function closeItineraryModal() { document.getElementById('itinerary-modal').classList.remove('show'); }
+
+function saveItineraryItem() {
+  const title = document.getElementById('itinerary-title').value.trim();
+  if (!title) { toast('请输入活动名称'); return; }
+  const editId = document.getElementById('itinerary-edit-id').value;
+  const data = {
+    date: document.getElementById('itinerary-day-date').value,
+    time: document.getElementById('itinerary-time').value || '09:00',
+    title: title,
+    location: document.getElementById('itinerary-location').value.trim(),
+    type: document.getElementById('itinerary-type').value,
+    duration: parseInt(document.getElementById('itinerary-duration').value) || 60,
+    notes: document.getElementById('itinerary-notes').value.trim()
+  };
+  if (editId) {
+    const item = itineraryItems.find(x => x.id === +editId);
+    if (item) Object.assign(item, data);
+    toast('活动已更新');
+  } else {
+    data.id = itineraryNextId++;
+    itineraryItems.push(data);
+    toast('活动已添加');
+  }
+  closeItineraryModal(); renderItinerary(); syncToPlan(); savePlansData();
+}
+
+function deleteItineraryItem(id) {
+  itineraryItems = itineraryItems.filter(x => x.id !== id);
+  renderItinerary(); syncToPlan(); savePlansData();
+  toast('活动已删除');
+}
+
+function deleteItineraryFromModal() {
+  const editId = document.getElementById('itinerary-edit-id').value;
+  if (editId) { deleteItineraryItem(+editId); closeItineraryModal(); }
+}
+// ===== End Itinerary =====
+
+
+// ===== Packing List Functions =====
+let packingNextId = 13;
+const PACKING_CATEGORIES = ['证件', '衣物', '电子设备', '洗漱用品', '药品', '其他'];
+
+function renderPacking() {
+  const container = document.getElementById('packing-categories');
+  const progressEl = document.getElementById('packing-progress');
+  container.innerHTML = '';
+
+  const total = packingItems.length;
+  const packed = packingItems.filter(p => p.packed).length;
+  const pct = total > 0 ? Math.round(packed / total * 100) : 0;
+  progressEl.innerHTML = '<div class="packing-progress-bar"><div class="packing-progress-fill" style="width:' + pct + '%;background:' + (pct >= 80 ? 'var(--success)' : pct >= 40 ? 'oklch(70% 0.16 85)' : 'var(--accent)') + '"></div></div><div class="packing-progress-text">已打包 ' + packed + ' / ' + total + ' 件 (' + pct + '%)</div>';
+
+  PACKING_CATEGORIES.forEach(cat => {
+    const items = packingItems.filter(p => p.category === cat);
+    if (items.length === 0) return;
+    const catPacked = items.filter(p => p.packed).length;
+
+    const catEl = document.createElement('div');
+    catEl.className = 'packing-category';
+    catEl.innerHTML = '<div class="packing-category-header">' + cat + '<span class="packing-category-count">' + catPacked + '/' + items.length + '</span></div>';
+
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'packing-item' + (item.packed ? ' done' : '');
+      el.innerHTML = '<input type="checkbox" ' + (item.packed ? 'checked' : '') + ' onchange="togglePackItem(' + item.id + ')">' +
+        '<span class="packing-text" contenteditable="true" data-id="' + item.id + '">' + item.name + '</span>' +
+        '<span class="packing-delete" onclick="deletePackItem(' + item.id + ')">×</span>';
+      el.querySelector('.packing-text').addEventListener('blur', function(e) {
+        const itm = packingItems.find(p => p.id === item.id);
+        if (itm) { itm.name = e.target.textContent.trim(); syncToPlan(); savePlansData(); }
+      });
+      catEl.appendChild(el);
+    });
+
+    // Add row
+    const addRow = document.createElement('div');
+    addRow.className = 'packing-add-row';
+    addRow.innerHTML = '<input class="packing-add-input" placeholder="添加物品到「' + cat + '」" onkeydown="if(event.key===\'Enter\')addPackItem(\'' + cat + '\',this)"><button class="btn-sm" onclick="addPackItem(\'' + cat + '\',this.previousElementSibling)">添加</button>';
+    catEl.appendChild(addRow);
+    container.appendChild(catEl);
+  });
+
+  // Add empty categories with just an add row
+  PACKING_CATEGORIES.forEach(cat => {
+    if (packingItems.some(p => p.category === cat)) return;
+    const catEl = document.createElement('div');
+    catEl.className = 'packing-category';
+    catEl.innerHTML = '<div class="packing-category-header">' + cat + '<span class="packing-category-count">0/0</span></div>';
+    const addRow = document.createElement('div');
+    addRow.className = 'packing-add-row';
+    addRow.innerHTML = '<input class="packing-add-input" placeholder="添加物品到「' + cat + '」" onkeydown="if(event.key===\'Enter\')addPackItem(\'' + cat + '\',this)"><button class="btn-sm" onclick="addPackItem(\'' + cat + '\',this.previousElementSibling)">添加</button>';
+    catEl.appendChild(addRow);
+    container.appendChild(catEl);
+  });
+}
+
+function togglePackItem(id) {
+  const item = packingItems.find(p => p.id === id);
+  if (item) { item.packed = !item.packed; renderPacking(); syncToPlan(); savePlansData(); }
+}
+
+function addPackItem(category, inputEl) {
+  const name = inputEl.value.trim();
+  if (!name) return;
+  packingItems.push({ id: packingNextId++, name, category, packed: false });
+  inputEl.value = '';
+  renderPacking(); syncToPlan(); savePlansData();
+}
+
+function deletePackItem(id) {
+  packingItems = packingItems.filter(p => p.id !== id);
+  renderPacking(); syncToPlan(); savePlansData();
+}
+// ===== End Packing List =====
+
+
+// ===== Document Functions =====
+let docNextId = 4;
+
+function renderDocuments() {
+  const container = document.getElementById('doc-cards');
+  container.innerHTML = '';
+
+  if (documents.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">暂无证件记录。点击下方按钮添加。</div>';
+    return;
+  }
+
+  documents.forEach(doc => {
+    const typeLabels = { passport: '护照', visa: '签证', insurance: '保险', booking: '预订', other: '其他' };
+    const typeBgs = { passport: 'var(--accent-subtle)', visa: 'var(--coral-subtle)', insurance: 'var(--success-subtle)', booking: 'var(--teal-subtle)', other: 'oklch(95% 0.006 60)' };
+    const typeFgs = { passport: 'var(--accent)', visa: 'var(--coral)', insurance: 'var(--success)', booking: 'var(--teal)', other: 'var(--muted)' };
+    const statusLabels = { valid: '有效', expiring: '即将过期', expired: '已过期', processing: '办理中', none: '未办理' };
+    const statusCls = { valid: 'doc-status-valid', expiring: 'doc-status-expiring', expired: 'doc-status-expired', processing: 'doc-status-processing', none: 'doc-status-none' };
+
+    const card = document.createElement('div');
+    card.className = 'doc-card';
+    let rows = '';
+    if (doc.number) rows += '<div class="doc-card-row"><span class="doc-label">号码</span><span class="doc-value">' + doc.number + '</span></div>';
+    if (doc.expiry) rows += '<div class="doc-card-row"><span class="doc-label">有效期</span><span class="doc-value">' + doc.expiry + '</span></div>';
+    if (doc.notes) rows += '<div class="doc-card-row"><span class="doc-label">备注</span><span class="doc-value">' + doc.notes + '</span></div>';
+
+    card.innerHTML = '<div class="doc-card-header">' +
+        '<div class="doc-card-icon" style="background:' + (typeBgs[doc.type] || typeBgs.other) + '">' +
+          '<svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2" y="1.5" width="12" height="13" rx="2" stroke="' + (typeFgs[doc.type] || typeFgs.other) + '" stroke-width="1.1"/><path d="M5 5h6M5 7.5h4" stroke="' + (typeFgs[doc.type] || typeFgs.other) + '" stroke-width=".8" stroke-linecap="round" opacity=".5"/></svg>' +
+        '</div>' +
+        '<span class="doc-card-name">' + doc.name + '</span>' +
+        '<span class="doc-card-status ' + (statusCls[doc.status] || statusCls.none) + '">' + (statusLabels[doc.status] || doc.status) + '</span>' +
+      '</div>' + rows +
+      '<div class="doc-card-actions">' +
+        '<button class="doc-card-action" onclick="editDocument(' + doc.id + ')">✎</button>' +
+        '<button class="doc-card-action danger" onclick="deleteDocument(' + doc.id + ')">×</button>' +
+      '</div>';
+    container.appendChild(card);
+  });
+}
+
+function openDocModal(doc) {
+  document.getElementById('doc-edit-id').value = doc ? doc.id : '';
+  document.getElementById('doc-name').value = doc ? doc.name : '';
+  document.getElementById('doc-type').value = doc ? doc.type : 'passport';
+  document.getElementById('doc-number').value = doc ? (doc.number || '') : '';
+  document.getElementById('doc-expiry').value = doc ? (doc.expiry || '') : '';
+  document.getElementById('doc-status').value = doc ? doc.status : 'valid';
+  document.getElementById('doc-notes').value = doc ? (doc.notes || '') : '';
+  document.getElementById('doc-modal-delete').style.display = doc ? '' : 'none';
+  document.getElementById('doc-modal-title').textContent = doc ? '编辑证件' : '添加证件';
+  document.getElementById('doc-modal').classList.add('show');
+  document.getElementById('doc-name').focus();
+}
+
+function addDocument() { openDocModal(null); }
+
+function editDocument(id) {
+  const doc = documents.find(d => d.id === id);
+  if (doc) openDocModal(doc);
+}
+
+function closeDocModal() { document.getElementById('doc-modal').classList.remove('show'); }
+
+function saveDocument() {
+  const name = document.getElementById('doc-name').value.trim();
+  if (!name) { toast('请输入证件名称'); return; }
+  const editId = document.getElementById('doc-edit-id').value;
+  const data = {
+    name,
+    type: document.getElementById('doc-type').value,
+    number: document.getElementById('doc-number').value.trim(),
+    expiry: document.getElementById('doc-expiry').value,
+    status: document.getElementById('doc-status').value,
+    notes: document.getElementById('doc-notes').value.trim()
+  };
+  if (editId) {
+    const doc = documents.find(d => d.id === +editId);
+    if (doc) Object.assign(doc, data);
+    toast('证件已更新');
+  } else {
+    data.id = docNextId++;
+    documents.push(data);
+    toast('证件已添加');
+  }
+  closeDocModal(); renderDocuments(); syncToPlan(); savePlansData();
+}
+
+function deleteDocument(id) {
+  documents = documents.filter(d => d.id !== id);
+  renderDocuments(); syncToPlan(); savePlansData();
+  toast('证件已删除');
+}
+
+function deleteDocFromModal() {
+  const editId = document.getElementById('doc-edit-id').value;
+  if (editId) { deleteDocument(+editId); closeDocModal(); }
+}
+// ===== End Documents =====
+// ===== Plan Overview =====
+let compareSelection = new Set();
+
+function renderPlanOverview() {
+  syncToPlan();
+  const container = document.getElementById('plan-cards');
+  container.innerHTML = '';
+  compareSelection.clear();
+  closeCompareBar();
+
+  Object.values(plans).forEach(p => {
+    // Calculate stats for each plan
+    const planTrips = p.trips || [];
+    const planFlights = (p.flights || []).filter(f => f.selected);
+    const flightTotal = planFlights.reduce((s, f) => s + f.price, 0);
+    const planHotels = (p.hotels || []).filter(h => h.selected);
+    const hotelTotal = planHotels.reduce((s, h) => s + (h.priceNum || 0), 0);
+    const nights = planTrips.reduce((s, t) => s + daysBetween(parseDate(t.start), parseDate(t.end)), 0);
+    const hotelBudget = hotelTotal * nights;
+    const planExpenses = (p.expenses || []).filter(e => e.selected);
+    const expenseTotal = planExpenses.reduce((s, e) => s + e.amount, 0);
+    const grandTotal = flightTotal + hotelBudget + expenseTotal;
+  const actualGrandTotal = flightTotal + hotelBudget + actualExpenseTotal;
+    const planChecklist = p.checklistItems || [];
+    const doneCount = planChecklist.filter(c => c.done).length;
+    const totalCount = planChecklist.length;
+    const progress = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
+    const destNames = (p.destinations || []).filter(d => d.selected).map(d => d.name);
+    const status = PLAN_STATUSES[p.status] || PLAN_STATUSES.draft;
+
+    // Date range
+    let dateRange = '未设置';
+    if (planTrips.length > 0) {
+      const sorted = [...planTrips].sort((a, b) => a.start.localeCompare(b.start));
+      dateRange = sorted[0].start + ' — ' + sorted[sorted.length - 1].end;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'plan-card';
+    card.dataset.planId = p.id;
+    card.innerHTML =
+      '<div class="plan-card-header">' +
+        '<input type="checkbox" class="plan-card-check" data-plan-id="' + p.id + '" onchange="togglePlanCompare(\'' + p.id + '\', this.checked)">' +
+        '<span class="plan-card-name">' + p.name + '</span>' +
+        '<span class="plan-card-status ' + status.cls + '">' + status.label + '</span>' +
+      '</div>' +
+      '<div class="plan-card-body">' +
+        '<div class="plan-card-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6.5" r="3" stroke="currentColor" stroke-width="1.1"/><path d="M8 9.5L5 14.5h6L8 9.5z" stroke="currentColor" stroke-width="1"/></svg><span class="label">目的地</span><span class="value">' + (destNames.join('、') || '未选择') + '</span></div>' +
+        '<div class="plan-card-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.1"/><path d="M2 6.5h12" stroke="currentColor" stroke-width=".8"/></svg><span class="label">日期</span><span class="value">' + dateRange + '</span></div>' +
+        '<div class="plan-card-row"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M3 8h8M3 12h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span class="label">行程</span><span class="value">' + planTrips.length + ' 段 · ' + nights + ' 晚</span></div>' +
+        '<div class="plan-card-budget">¥' + grandTotal.toLocaleString() + '</div>' +
+        '<div class="plan-card-budget-label">总预算（已选项目）</div>' +
+        '<div class="plan-card-progress">' +
+          '<div class="plan-card-progress-bar"><div class="plan-card-progress-fill" style="width:' + progress + '%;background:' + (progress >= 80 ? 'var(--success)' : progress >= 40 ? 'oklch(70% 0.16 85)' : 'var(--accent)') + '"></div></div>' +
+          '<div class="plan-card-progress-text">待办 ' + doneCount + '/' + totalCount + ' (' + progress + '%)</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="plan-card-footer">' +
+        '<button class="plan-card-btn" onclick="event.stopPropagation();switchPlanFromOverview(\'' + p.id + '\')">进入此计划</button>' +
+      '</div>';
+    card.addEventListener('click', function(e) {
+      if (e.target.type === 'checkbox' || e.target.closest('.plan-card-btn')) return;
+      switchPlanFromOverview(p.id);
+    });
+    container.appendChild(card);
+  });
+}
+
+function switchPlanFromOverview(planId) {
+  switchPlan(planId);
+  switchTab('calendar');
+}
+
+function togglePlanCompare(planId, checked) {
+  if (checked) compareSelection.add(planId);
+  else compareSelection.delete(planId);
+
+  // Update card selected state
+  document.querySelectorAll('.plan-card').forEach(card => {
+    card.classList.toggle('selected', compareSelection.has(card.dataset.planId));
+  });
+
+  if (compareSelection.size >= 2) {
+    showCompareBar();
+  } else {
+    closeCompareBar();
+  }
+}
+
+function showCompareBar() {
+  const bar = document.getElementById('compare-bar');
+  const content = document.getElementById('compare-content');
+  const title = document.getElementById('compare-bar-title');
+  const selectedIds = [...compareSelection];
+  title.textContent = selectedIds.length + ' 个计划对比';
+
+  // Build comparison table
+  let html = '<table class="compare-table"><thead><tr><th>指标</th>';
+  selectedIds.forEach(id => {
+    html += '<th>' + plans[id].name + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  // Rows to compare
+  const rows = [];
+
+  // Budget
+  const budgets = selectedIds.map(id => {
+    const p = plans[id];
+    const ft = (p.flights || []).filter(f => f.selected).reduce((s, f) => s + f.price, 0);
+    const ht = (p.hotels || []).filter(h => h.selected).reduce((s, h) => s + (h.priceNum || 0), 0);
+    const nights = (p.trips || []).reduce((s, t) => s + daysBetween(parseDate(t.start), parseDate(t.end)), 0);
+    const et = (p.expenses || []).filter(e => e.selected).reduce((s, e) => s + e.amount, 0);
+    return ft + ht * nights + et;
+  });
+  rows.push({ label: '总预算', values: budgets.map(v => '¥' + v.toLocaleString()), raw: budgets, best: 'min' });
+
+  // Days
+  const days = selectedIds.map(id => {
+    return (plans[id].trips || []).reduce((s, t) => s + daysBetween(parseDate(t.start), parseDate(t.end)), 0);
+  });
+  rows.push({ label: '行程天数', values: days.map(v => v + ' 晚'), raw: days, best: null });
+
+  // Destinations
+  const dests = selectedIds.map(id => {
+    return (plans[id].destinations || []).filter(d => d.selected).map(d => d.name).join('、') || '未选择';
+  });
+  rows.push({ label: '目的地', values: dests, raw: null, best: null });
+
+  // Flights count
+  const flightCounts = selectedIds.map(id => (plans[id].flights || []).length);
+  rows.push({ label: '航班数', values: flightCounts.map(v => v + ' 个'), raw: flightCounts, best: null });
+
+  // Hotels count
+  const hotelCounts = selectedIds.map(id => (plans[id].hotels || []).length);
+  rows.push({ label: '酒店数', values: hotelCounts.map(v => v + ' 家'), raw: hotelCounts, best: null });
+
+  // Todo progress
+  const progresses = selectedIds.map(id => {
+    const cl = plans[id].checklistItems || [];
+    const done = cl.filter(c => c.done).length;
+    return cl.length > 0 ? Math.round(done / cl.length * 100) : 0;
+  });
+  rows.push({ label: '待办进度', values: progresses.map(v => v + '%'), raw: progresses, best: 'max' });
+
+  // Status
+  const statuses = selectedIds.map(id => {
+    const s = PLAN_STATUSES[plans[id].status] || PLAN_STATUSES.draft;
+    return s.label;
+  });
+  rows.push({ label: '状态', values: statuses, raw: null, best: null });
+
+  rows.forEach(row => {
+    html += '<tr><td style="font-weight:600;color:var(--muted)">' + row.label + '</td>';
+    row.values.forEach((val, i) => {
+      let cls = '';
+      if (row.best && row.raw) {
+        const bestVal = row.best === 'min' ? Math.min(...row.raw) : Math.max(...row.raw);
+        if (row.raw[i] === bestVal) cls = ' class="compare-best"';
+      }
+      html += '<td' + cls + '>' + val + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  content.innerHTML = html;
+  bar.classList.add('show');
+}
+
+function closeCompareBar() {
+  document.getElementById('compare-bar').classList.remove('show');
+}
+// ===== End Plan Overview =====
+
+// ===== End Multi-Plan Management =====
+
+let coverPos = { x: 50, y: 50 }, coverVisible = true;
+function initCover() {
+  const saved = localStorage.getItem('tp-cover'), savedPos = localStorage.getItem('tp-cover-pos'), savedVisible = localStorage.getItem('tp-cover-visible');
+  coverVisible = savedVisible !== 'false';
+  if (!coverVisible) document.getElementById('cover-wrapper').classList.add('hidden');
+  if (savedPos) { try { coverPos = JSON.parse(savedPos); } catch(e) {} }
+  updateCoverToggle();
+  if (saved) showCoverImage(saved);
+}
+function showCoverImage(src) {
+  const img = document.getElementById('cover-img');
+  img.src = src; img.style.objectPosition = coverPos.x + '% ' + coverPos.y + '%';
+  document.getElementById('cover').classList.add('has-image');
+  document.getElementById('cover-empty').style.display = 'none';
+  initCoverDrag();
+}
+function handleCoverUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    coverPos = { x: 50, y: 50 };
+    localStorage.setItem('tp-cover', ev.target.result);
+    localStorage.setItem('tp-cover-pos', JSON.stringify(coverPos));
+    showCoverImage(ev.target.result); toast('封面已更新');
+  };
+  reader.readAsDataURL(file); e.target.value = '';
+}
+function removeCover() {
+  document.getElementById('cover-img').src = '';
+  document.getElementById('cover').classList.remove('has-image');
+  document.getElementById('cover-empty').style.display = '';
+  localStorage.removeItem('tp-cover'); localStorage.removeItem('tp-cover-pos');
+  destroyCoverDrag(); toast('封面已移除');
+}
+function toggleCoverVisibility() {
+  coverVisible = !coverVisible;
+  const wrapper = document.getElementById('cover-wrapper');
+  if (coverVisible) wrapper.classList.remove('hidden'); else wrapper.classList.add('hidden');
+  localStorage.setItem('tp-cover-visible', coverVisible); updateCoverToggle();
+}
+function updateCoverToggle() {
+  const track = document.getElementById('cover-toggle'), thumb = document.getElementById('cover-toggle-thumb');
+  if (coverVisible) { track.style.background = 'var(--accent)'; thumb.style.left = '18px'; }
+  else { track.style.background = 'var(--muted-light)'; thumb.style.left = '2px'; }
+}
+let coverDrag = { active: false, startX: 0, startY: 0, startPosX: 50, startPosY: 50 };
+function initCoverDrag() {
+  const cover = document.getElementById('cover');
+  cover.removeEventListener('mousedown', coverMouseDown); cover.addEventListener('mousedown', coverMouseDown);
+  cover.removeEventListener('touchstart', coverTouchStart); cover.addEventListener('touchstart', coverTouchStart, { passive: false });
+}
+function destroyCoverDrag() {
+  document.removeEventListener('mousemove', coverMouseMove); document.removeEventListener('mouseup', coverMouseUp);
+  document.removeEventListener('touchmove', coverTouchMove); document.removeEventListener('touchend', coverTouchEnd);
+}
+function coverMouseDown(e) {
+  if (e.target.closest('.cover-actions') || e.target.closest('label') || e.target.closest('button')) return;
+  if (!document.getElementById('cover').classList.contains('has-image')) return;
+  coverDrag.active = true; coverDrag.startX = e.clientX; coverDrag.startY = e.clientY;
+  coverDrag.startPosX = coverPos.x; coverDrag.startPosY = coverPos.y; e.preventDefault();
+  document.addEventListener('mousemove', coverMouseMove); document.addEventListener('mouseup', coverMouseUp);
+}
+function coverMouseMove(e) {
+  if (!coverDrag.active) return;
+  const rect = document.getElementById('cover').getBoundingClientRect();
+  coverPos.x = Math.max(0, Math.min(100, coverDrag.startPosX + (e.clientX - coverDrag.startX) / rect.width * 100));
+  coverPos.y = Math.max(0, Math.min(100, coverDrag.startPosY + (e.clientY - coverDrag.startY) / rect.height * 100));
+  document.getElementById('cover-img').style.objectPosition = coverPos.x + '% ' + coverPos.y + '%';
+}
+function coverMouseUp() {
+  if (coverDrag.active) { coverDrag.active = false; localStorage.setItem('tp-cover-pos', JSON.stringify(coverPos)); }
+  document.removeEventListener('mousemove', coverMouseMove); document.removeEventListener('mouseup', coverMouseUp);
+}
+function coverTouchStart(e) {
+  if (e.target.closest('.cover-actions') || e.target.closest('label') || e.target.closest('button')) return;
+  if (!document.getElementById('cover').classList.contains('has-image')) return;
+  const t = e.touches[0]; coverDrag.active = true; coverDrag.startX = t.clientX; coverDrag.startY = t.clientY;
+  coverDrag.startPosX = coverPos.x; coverDrag.startPosY = coverPos.y; e.preventDefault();
+  document.addEventListener('touchmove', coverTouchMove, { passive: false }); document.addEventListener('touchend', coverTouchEnd);
+}
+function coverTouchMove(e) {
+  if (!coverDrag.active) return; e.preventDefault();
+  const t = e.touches[0], rect = document.getElementById('cover').getBoundingClientRect();
+  coverPos.x = Math.max(0, Math.min(100, coverDrag.startPosX + (t.clientX - coverDrag.startX) / rect.width * 100));
+  coverPos.y = Math.max(0, Math.min(100, coverDrag.startPosY + (t.clientY - coverDrag.startY) / rect.height * 100));
+  document.getElementById('cover-img').style.objectPosition = coverPos.x + '% ' + coverPos.y + '%';
+}
+function coverTouchEnd() {
+  if (coverDrag.active) { coverDrag.active = false; localStorage.setItem('tp-cover-pos', JSON.stringify(coverPos)); }
+  document.removeEventListener('touchmove', coverTouchMove); document.removeEventListener('touchend', coverTouchEnd);
+}
+function switchTab(tab) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item[data-tab]').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + tab).classList.add('active');
+  document.querySelector('.sidebar-item[data-tab="' + tab + '"]').classList.add('active');
+  if (tab === 'itinerary') renderItinerary();
+  if (tab === 'packing') renderPacking();
+  if (tab === 'documents') renderDocuments();
+  if (tab === 'plan-overview') renderPlanOverview();
+  if (tab === 'summary') renderSummary();
+  if (tab === 'hotels') renderHotels();
+  if (tab === 'flights') renderFlights();
+  if (tab === 'destinations') renderDestinations();
+  if (tab === 'expenses') renderExpenses();
+  closeSidebar();
+}
+function openSidebar() { document.querySelector('.sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); }
+function closeSidebar() { document.querySelector('.sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const DAY_NAMES = ['日','一','二','三','四','五','六'];
+function parseDate(s) { const p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+function fmtDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+function calNav(d) { calMonth += d; if (calMonth < 0) { calMonth = 11; calYear--; } if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+function calToday() { calYear = TODAY.getFullYear(); calMonth = TODAY.getMonth(); renderCalendar(); }
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent = calYear + '年 ' + MONTH_NAMES[calMonth];
+  const grid = document.getElementById('cal-grid'); grid.innerHTML = '';
+  DAY_NAMES.forEach(d => { const h = document.createElement('div'); h.className = 'cal-header'; h.textContent = d; grid.appendChild(h); });
+  const first = new Date(calYear, calMonth, 1), startDay = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate(), prevDays = new Date(calYear, calMonth, 0).getDate();
+  const totalCells = Math.ceil((startDay + daysInMonth) / 7) * 7;
+  for (let i = 0; i < totalCells; i++) {
+    const day = document.createElement('div'); day.className = 'cal-day';
+    const dateNum = document.createElement('div'); dateNum.className = 'cal-date';
+    let d, isOther = false;
+    if (i < startDay) { d = prevDays - startDay + 1 + i; dateNum.textContent = d; isOther = true; day.classList.add('other-month'); }
+    else if (i >= startDay + daysInMonth) { d = i - startDay - daysInMonth + 1; dateNum.textContent = d; isOther = true; day.classList.add('other-month'); }
+    else { d = i - startDay + 1; dateNum.textContent = d; if (calYear === TODAY.getFullYear() && calMonth === TODAY.getMonth() && d === TODAY.getDate()) day.classList.add('today'); }
+    const actualDate = isOther ? (i < startDay ? new Date(calYear, calMonth-1, d) : new Date(calYear, calMonth+1, d)) : new Date(calYear, calMonth, d);
+    day.dataset.date = fmtDate(actualDate); day.appendChild(dateNum);
+    day.addEventListener('dragover', e => { e.preventDefault(); day.classList.add('drag-over'); });
+    day.addEventListener('dragleave', () => day.classList.remove('drag-over'));
+    day.addEventListener('drop', e => { e.preventDefault(); day.classList.remove('drag-over'); handleDrop(day.dataset.date); });
+    day.addEventListener('dblclick', () => openAddTripModal(day.dataset.date));
+    grid.appendChild(day);
+  }
+  renderTripBars(); renderTimeline(); renderLegend();
+}
+function renderTripBars() {
+  const grid = document.getElementById('cal-grid'), allDays = grid.querySelectorAll('.cal-day');
+  const dayMap = {}; allDays.forEach((d, i) => { dayMap[d.dataset.date] = { el: d, index: i }; });
+  trips.forEach(trip => {
+    const tStart = parseDate(trip.start), tEnd = parseDate(trip.end); let current = new Date(tStart);
+    while (current <= tEnd) {
+      const dateStr = fmtDate(current), info = dayMap[dateStr];
+      if (info) {
+        const dayOfWeek = current.getDay(), span = Math.min(6 - dayOfWeek, daysBetween(current, tEnd)) + 1;
+        const bar = document.createElement('div'); bar.className = 'cal-trip-bar'; bar.draggable = true;
+        bar.dataset.tripId = trip.id; bar.style.background = trip.color;
+        bar.style.top = (26 + getTripTopOffset(info.el)) + 'px';
+        bar.style.gridColumn = (dayOfWeek + 1) + ' / span ' + span;
+        const label = document.createElement('span'); label.className = 'trip-name-label'; label.textContent = trip.name; bar.appendChild(label);
+        if (span === 1) bar.classList.add('trip-single');
+        else if (dayOfWeek === 0) bar.classList.add('trip-start');
+        else bar.classList.add('trip-mid');
+        let didDrag = false, startX = 0, startY = 0;
+        bar.addEventListener('mousedown', e => { didDrag = false; startX = e.clientX; startY = e.clientY; });
+        bar.addEventListener('mousemove', e => { if (Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3) didDrag = true; });
+        bar.addEventListener('click', e => {
+          if (!didDrag) {
+            e.stopPropagation();
+            if (window.innerWidth <= 639) {
+              showTripDetail(trip.name, trip.start, trip.end);
+            } else {
+              openEditTripModal(trip.id);
+            }
+          }
+        });
+        bar.addEventListener('dragstart', e => { didDrag = true; e.dataTransfer.setData('text/plain', trip.id); bar.classList.add('dragging'); });
+        bar.addEventListener('dragend', () => bar.classList.remove('dragging'));
+        const del = document.createElement('span'); del.className = 'trip-delete'; del.textContent = '×';
+        del.onclick = e => { e.stopPropagation(); deleteTrip(trip.id); }; bar.appendChild(del);
+        info.el.appendChild(bar);
+      }
+      current.setDate(current.getDate() + 1);
+      if (current.getDay() === 0 && current <= tEnd) break;
+    }
+  });
+}
+function getTripTopOffset(dayEl) { return dayEl.querySelectorAll('.cal-trip-bar').length * 26; }
+function handleDrop(dateStr) {
+  const tripId = +event.dataTransfer.getData('text/plain'), trip = trips.find(t => t.id === tripId);
+  if (!trip) return;
+  const diff = daysBetween(parseDate(trip.start), parseDate(dateStr));
+  const newEnd = new Date(parseDate(trip.end)); newEnd.setDate(newEnd.getDate() + diff);
+  trip.start = dateStr; trip.end = fmtDate(newEnd); renderCalendar(); toast('行程已移动'); syncToPlan(); savePlansData();
+}
+function deleteTrip(id) { trips = trips.filter(t => t.id !== id); renderCalendar(); toast('行程已删除'); syncToPlan(); savePlansData(); }
+function openAddTripModal(date) {
+  document.getElementById('trip-modal-title').textContent = '添加行程';
+  document.getElementById('trip-edit-id').value = ''; document.getElementById('trip-name').value = '';
+  document.getElementById('trip-start').value = date; document.getElementById('trip-end').value = date;
+  document.getElementById('trip-color').selectedIndex = 0;
+  document.getElementById('trip-modal-delete').style.display = 'none';
+  document.getElementById('trip-modal').classList.add('show'); document.getElementById('trip-name').focus();
+}
+function openEditTripModal(tripId) {
+  const trip = trips.find(t => t.id === tripId); if (!trip) return;
+  document.getElementById('trip-modal-title').textContent = '编辑行程';
+  document.getElementById('trip-edit-id').value = trip.id;
+  document.getElementById('trip-name').value = trip.name;
+  document.getElementById('trip-start').value = trip.start;
+  document.getElementById('trip-end').value = trip.end;
+  document.getElementById('trip-color').value = trip.color;
+  document.getElementById('trip-modal-delete').style.display = '';
+  document.getElementById('trip-modal').classList.add('show'); document.getElementById('trip-name').focus();
+}
+function closeTripModal() { document.getElementById('trip-modal').classList.remove('show'); }
+function saveTrip() {
+  const name = document.getElementById('trip-name').value.trim();
+  if (!name) { toast('请输入行程名称'); return; }
+  const start = document.getElementById('trip-start').value, end = document.getElementById('trip-end').value;
+  if (!start || !end) { toast('请选择日期'); return; }
+  const color = document.getElementById('trip-color').value, editId = document.getElementById('trip-edit-id').value;
+  if (editId) { const trip = trips.find(t => t.id === +editId); if (trip) { trip.name = name; trip.start = start; trip.end = end; trip.color = color; toast('行程已更新'); } }
+  else { trips.push({ id: nextId.trip++, name, start, end, color }); toast('行程已添加'); }
+  closeTripModal(); renderCalendar(); syncToPlan(); savePlansData();
+}
+function deleteFromModal() { const editId = document.getElementById('trip-edit-id').value; if (editId) { deleteTrip(+editId); closeTripModal(); syncToPlan(); savePlansData(); } }
+function showTripDetail(name, start, end) {
+  document.getElementById('trip-detail-title').textContent = name;
+  const s = parseDate(start), e = parseDate(end), dur = daysBetween(s, e) + 1;
+  document.getElementById('trip-detail-dates').textContent = start + ' — ' + end + '（' + dur + '天）';
+  document.getElementById('trip-name-detail').classList.add('show');
+}
+function closeTripDetail() { document.getElementById('trip-name-detail').classList.remove('show'); }
+function renderTimeline() {
+  const bar = document.getElementById('timeline-bar'), labels = document.getElementById('timeline-labels');
+  bar.innerHTML = ''; labels.innerHTML = '';
+  const monthStart = new Date(calYear, calMonth, 1), daysInMonth = new Date(calYear, calMonth+1, 0).getDate(), monthEnd = new Date(calYear, calMonth+1, 0);
+  const vertical = document.getElementById('timeline-vertical');
+  if (vertical) vertical.innerHTML = '';
+  trips.forEach(trip => {
+    const tStart = parseDate(trip.start), tEnd = parseDate(trip.end);
+    if (tEnd < monthStart || tStart > monthEnd) return;
+    const visStart = tStart < monthStart ? monthStart : tStart, visEnd = tEnd > monthEnd ? monthEnd : tEnd;
+    const leftPct = (daysBetween(monthStart, visStart) / daysInMonth * 100) + '%';
+    const widthPct = ((daysBetween(visStart, visEnd) + 1) / daysInMonth * 100) + '%';
+    const seg = document.createElement('div'); seg.className = 'timeline-segment';
+    seg.style.left = leftPct; seg.style.width = widthPct; seg.style.background = trip.color; seg.textContent = trip.name;
+    bar.appendChild(seg);
+    if (vertical) {
+      const item = document.createElement('div'); item.className = 'timeline-vertical-item';
+      const dur = daysBetween(visStart, visEnd) + 1;
+      item.innerHTML = '<div class="timeline-vertical-dot" style="background:' + trip.color + '"></div><div class="timeline-vertical-content"><div class="timeline-vertical-name" onclick="showTripDetail(\'' + trip.name.replace(/'/g,"\\'") + '\',\'' + trip.start + '\',\'' + trip.end + '\')">' + trip.name + '</div><div class="timeline-vertical-dates">' + trip.start + ' — ' + trip.end + '（' + dur + '天）</div></div>';
+      vertical.appendChild(item);
+    }
+  });
+  for (let i = 1; i <= daysInMonth; i += 7) { const lbl = document.createElement('span'); lbl.textContent = i + '日'; labels.appendChild(lbl); }
+  const last = document.createElement('span'); last.textContent = daysInMonth + '日'; labels.appendChild(last);
+}
+function renderLegend() {
+  const leg = document.getElementById('cal-legend'); leg.innerHTML = '';
+  trips.forEach(t => { const item = document.createElement('div'); item.className = 'cal-legend-item'; const dot = document.createElement('div'); dot.className = 'cal-legend-color'; dot.style.background = t.color; item.appendChild(dot); item.appendChild(document.createTextNode(t.name)); leg.appendChild(item); });
+}
+const STATUS_MAP = { booked: { label: '已预订', cls: 'pill-booked' }, pending: { label: '待定', cls: 'pill-pending' }, compare: { label: '对比中', cls: 'pill-compare' } };
+const HOTEL_STATUS_MAP = { booked: { label: '已预订', cls: 'pill-booked' }, pending: { label: '待订', cls: 'pill-pending' }, cancelled: { label: '已取消', cls: 'pill-compare' } };
+const EXPENSE_STATUS_MAP = { paid: { label: '已支付', cls: 'pill-booked' }, pending: { label: '待付', cls: 'pill-pending' }, cancelled: { label: '已取消', cls: 'pill-compare' } };
+function renderFlights() {
+  const thead = document.getElementById('flights-thead');
+  let headerHtml = '<tr><th class="select-cell">选定</th><th>航空公司</th><th>航班号</th><th>出发 → 到达</th><th>出发</th><th>到达</th><th>价格 (¥)</th><th>舱位</th><th>状态</th>';
+  flightCriteria.forEach((c, i) => { headerHtml += '<th class="criteria-cell" style="text-align:center"><span contenteditable="true" data-fc-idx="' + i + '" style="outline:none" onblur="renameFlightCriteria(' + i + ', this.textContent.trim())">' + c + '</span><span class="criteria-delete" onclick="deleteFlightCriteria(' + i + ')">×</span></th>'; });
+  headerHtml += '<th></th></tr>'; thead.innerHTML = headerHtml;
+  const tbody = document.getElementById('flights-body'); tbody.innerHTML = '';
+  flights.forEach(f => {
+    const tr = document.createElement('tr');
+    let html = `<td class="select-cell"><input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFlightSelect(${f.id})"></td><td contenteditable="true" data-field="airline">${f.airline}</td><td contenteditable="true" data-field="code" style="font-family:var(--font-mono);font-size:12px">${f.code}</td><td contenteditable="true" data-field="route">${f.route}</td><td contenteditable="true" data-field="dep" style="font-family:var(--font-mono)">${f.dep}</td><td contenteditable="true" data-field="arr" style="font-family:var(--font-mono)">${f.arr}</td><td contenteditable="true" data-field="price" style="font-family:var(--font-mono);font-weight:600">¥${f.price.toLocaleString()}</td><td contenteditable="true" data-field="cls">${f.cls}</td><td><span class="pill ${STATUS_MAP[f.status].cls}" onclick="cycleStatus(${f.id})" style="cursor:pointer">${STATUS_MAP[f.status].label}</span></td>`;
+    flightCriteria.forEach((c, i) => { html += '<td><input class="note-input" value="' + (f.notes[i] || '') + '" onchange="updateFlightNote(' + f.id + ',' + i + ',this.value)" placeholder="点击输入"></td>'; });
+    html += `<td><span class="btn-danger btn-sm" onclick="deleteFlight(${f.id})" style="border:none;background:none;cursor:pointer;font-size:14px">×</span></td>`;
+    tr.innerHTML = html;
+    tr.querySelectorAll('td[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; let val = cell.textContent.trim(); if (field === 'price') { val = parseInt(val.replace(/[^\d]/g, ''), 10) || 0; cell.textContent = '¥' + val.toLocaleString(); f.price = val; } else { f[field] = val; } }); });
+    tbody.appendChild(tr);
+  });
+  const cards = document.getElementById('flights-cards'); cards.innerHTML = '';
+  flights.forEach(f => {
+    const card = document.createElement('div'); card.className = 'flight-card';
+    let notesHtml = '';
+    flightCriteria.forEach((c, i) => { notesHtml += '<div class="flight-card-note"><span class="note-label">' + c + '</span><input class="note-input" value="' + (f.notes[i] || '') + '" onchange="updateFlightNote(' + f.id + ',' + i + ',this.value)" placeholder="点击输入"></div>'; });
+    card.innerHTML = `<div class="flight-card-head"><input type="checkbox" ${f.selected ? 'checked' : ''} onchange="toggleFlightSelect(${f.id})"><span class="flight-card-name" contenteditable="true" data-field="airline">${f.airline}</span></div><div class="flight-card-meta"><span contenteditable="true" data-field="code" style="font-family:var(--font-mono)">${f.code}</span><span contenteditable="true" data-field="route">${f.route}</span><span class="price" contenteditable="true" data-field="price">¥${f.price.toLocaleString()}</span></div><div class="flight-card-notes">${notesHtml}</div><div class="flight-card-footer"><span class="pill ${STATUS_MAP[f.status].cls}" onclick="cycleStatus(${f.id})" style="cursor:pointer">${STATUS_MAP[f.status].label}</span><button class="hotel-card-delete" onclick="deleteFlight(${f.id})">×</button></div>`;
+    card.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; let val = cell.textContent.trim(); if (field === 'price') { val = parseInt(val.replace(/[^\d]/g, ''), 10) || 0; cell.textContent = '¥' + val.toLocaleString(); f.price = val; } else { f[field] = val; } }); });
+    cards.appendChild(card);
+  });
+}
+function toggleFlightSelect(id) { const f = flights.find(x => x.id === id); if (f) { f.selected = !f.selected; syncToPlan(); savePlansData(); } }
+function updateFlightNote(fid, ci, val) { const f = flights.find(x => x.id === fid); if (f) { f.notes[ci] = val; syncToPlan(); savePlansData(); } }
+function addFlight() { const notes = {}; flightCriteria.forEach((_, i) => notes[i] = ''); flights.push({ id: nextId.flight++, airline: '新航班', code: '', route: '', dep: '', arr: '', price: 0, cls: '经济舱', status: 'compare', selected: false, notes }); renderFlights(); syncToPlan(); savePlansData(); }
+function deleteFlight(id) { flights = flights.filter(f => f.id !== id); renderFlights(); syncToPlan(); savePlansData(); }
+function cycleStatus(id) { const f = flights.find(x => x.id === id); const cycle = ['compare', 'pending', 'booked']; f.status = cycle[(cycle.indexOf(f.status) + 1) % 3]; renderFlights(); syncToPlan(); savePlansData(); }
+function renameFlightCriteria(idx, n) { if (n) { flightCriteria[idx] = n; syncToPlan(); savePlansData(); } }
+function deleteFlightCriteria(idx) { if (flightCriteria.length <= 1) { toast('至少保留一个评估维度'); return; } flightCriteria.splice(idx, 1); flights.forEach(f => { delete f.notes[idx]; const newNotes = {}; Object.keys(f.notes).forEach(k => { const ki = parseInt(k); newNotes[ki > idx ? ki - 1 : ki] = f.notes[k]; }); f.notes = newNotes; }); renderFlights(); syncToPlan(); savePlansData(); }
+function openFlightCriteriaModal() { document.getElementById('flight-criteria-name').value = ''; document.getElementById('flight-criteria-modal').classList.add('show'); document.getElementById('flight-criteria-name').focus(); }
+function closeFlightCriteriaModal() { document.getElementById('flight-criteria-modal').classList.remove('show'); }
+function saveFlightCriteria() { const name = document.getElementById('flight-criteria-name').value.trim(); if (!name) { toast('请输入维度名称'); return; } const newIdx = flightCriteria.length; flightCriteria.push(name); flights.forEach(f => { f.notes[newIdx] = ''; }); closeFlightCriteriaModal(); renderFlights(); toast('已添加维度：' + name); syncToPlan(); savePlansData(); }
+function renderDestinations() {
+  const thead = document.getElementById('destinations-thead');
+  let headerHtml = '<tr><th class="select-cell">选定</th><th>目的地</th><th>国家/地区</th><th>备注</th>';
+  destCriteria.forEach((c, i) => { headerHtml += '<th class="criteria-cell" style="text-align:center"><span contenteditable="true" data-dc-idx="' + i + '" style="outline:none" onblur="renameDestCriteria(' + i + ', this.textContent.trim())">' + c + '</span><span class="criteria-delete" onclick="deleteDestCriteria(' + i + ')">×</span></th>'; });
+  headerHtml += '<th>状态</th><th style="text-align:center">综合评分</th><th></th></tr>'; thead.innerHTML = headerHtml;
+  const tbody = document.getElementById('destinations-body'); tbody.innerHTML = '';
+  destinations.forEach(d => {
+    const avg = d.scores.reduce((a, b) => a + b, 0) / d.scores.length;
+    const tr = document.createElement('tr');
+    let html = `<td class="select-cell"><input type="checkbox" ${d.selected ? 'checked' : ''} onchange="toggleDestSelect(${d.id})"></td><td contenteditable="true" data-field="name" style="font-weight:500">${d.name}</td><td contenteditable="true" data-field="country">${d.country}</td><td contenteditable="true" data-field="notes">${d.notes}</td>`;
+    d.scores.forEach((s, i) => { html += '<td style="text-align:center"><div class="stars">'; for (let j = 1; j <= 5; j++) html += '<span class="star ' + (j <= s ? 'filled' : '') + '" onclick="rateDest(' + d.id + ',' + i + ',' + j + ')">★</span>'; html += '</div></td>'; });
+    html += `<td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:${avg*20}%;background:${avg>=4?'var(--success)':avg>=3?'oklch(70% 0.16 85)':'var(--danger)'}"></div></div><span class="score-value">${avg.toFixed(1)}</span></div></td>`;
+    html += '<td><span class="btn-danger btn-sm" onclick="deleteDest(' + d.id + ')" style="border:none;background:none;cursor:pointer;font-size:14px">×</span></td>';
+    tr.innerHTML = html;
+    tr.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { d[cell.dataset.field] = cell.textContent.trim(); }); });
+    tbody.appendChild(tr);
+  });
+  const cards = document.getElementById('destinations-cards'); cards.innerHTML = '';
+  destinations.forEach(d => {
+    const avg = d.scores.reduce((a, b) => a + b, 0) / d.scores.length;
+    const card = document.createElement('div'); card.className = 'hotel-card';
+    let starsHtml = '';
+    d.scores.forEach((s, i) => { starsHtml += '<div class="hotel-card-criterion"><span class="criterion-name">' + destCriteria[i] + '</span><div class="stars">'; for (let j = 1; j <= 5; j++) starsHtml += '<span class="star ' + (j <= s ? 'filled' : '') + '" onclick="rateDest(' + d.id + ',' + i + ',' + j + ')">★</span>'; starsHtml += '</div></div>'; });
+    card.innerHTML = `<div class="hotel-card-head"><input type="checkbox" ${d.selected ? 'checked' : ''} onchange="toggleDestSelect(${d.id})"><span class="hotel-card-name" contenteditable="true" data-field="name">${d.name}</span></div><div class="hotel-card-meta"><span contenteditable="true" data-field="country">${d.country}</span><span contenteditable="true" data-field="notes">${d.notes || ''}</span></div><div class="hotel-card-criteria">${starsHtml}</div><div class="hotel-card-score"><div class="score-bar-wrap" style="flex:1"><div class="score-bar"><div class="score-bar-fill" style="width:${avg*20}%;background:${avg>=4?'var(--success)':avg>=3?'oklch(70% 0.16 85)':'var(--danger)'}"></div></div><span class="score-value">${avg.toFixed(1)}</span></div><button class="hotel-card-delete" onclick="deleteDest(${d.id})">×</button></div>`;
+    card.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { d[cell.dataset.field] = cell.textContent.trim(); }); });
+    cards.appendChild(card);
+  });
+}
+function toggleDestSelect(id) { const d = destinations.find(x => x.id === id); if (d) { d.selected = !d.selected; syncToPlan(); savePlansData(); } }
+function rateDest(did, ci, v) { const d = destinations.find(x => x.id === did); if (d) { d.scores[ci] = v; renderDestinations(); syncToPlan(); savePlansData(); } }
+function addDestination() { destinations.push({ id: nextId.dest++, name: '新目的地', country: '', notes: '', scores: destCriteria.map(() => 3), selected: false }); renderDestinations(); syncToPlan(); savePlansData(); }
+function deleteDest(id) { destinations = destinations.filter(d => d.id !== id); renderDestinations(); syncToPlan(); savePlansData(); }
+function renameDestCriteria(idx, n) { if (n) { destCriteria[idx] = n; syncToPlan(); savePlansData(); } }
+function deleteDestCriteria(idx) { if (destCriteria.length <= 1) { toast('至少保留一个评估维度'); return; } destCriteria.splice(idx, 1); destinations.forEach(d => d.scores.splice(idx, 1)); renderDestinations(); syncToPlan(); savePlansData(); }
+function openDestCriteriaModal() { document.getElementById('dest-criteria-name').value = ''; document.getElementById('dest-criteria-modal').classList.add('show'); document.getElementById('dest-criteria-name').focus(); }
+function closeDestCriteriaModal() { document.getElementById('dest-criteria-modal').classList.remove('show'); }
+function saveDestCriteria() { const name = document.getElementById('dest-criteria-name').value.trim(); if (!name) { toast('请输入维度名称'); return; } destCriteria.push(name); destinations.forEach(d => d.scores.push(3)); closeDestCriteriaModal(); renderDestinations(); toast('已添加维度：' + name); syncToPlan(); savePlansData(); }
+function renderExpenses() {
+  const tbody = document.getElementById('expenses-body'); tbody.innerHTML = '';
+  expenses.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="select-cell"><input type="checkbox" ${e.selected ? 'checked' : ''} onchange="toggleExpenseSelect(${e.id})"></td><td contenteditable="true" data-field="name">${e.name}</td><td><select onchange="updateExpenseCategory(${e.id}, this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:var(--font-body);background:var(--surface)">${EXPENSE_CATEGORIES.map(c => '<option' + (c === e.category ? ' selected' : '') + '>' + c + '</option>').join('')}</select></td><td contenteditable="true" data-field="amount" style="font-family:var(--font-mono);font-weight:600">¥${e.amount.toLocaleString()}</td><td><span class="pill ${EXPENSE_STATUS_MAP[e.status||'pending'].cls}" onclick="cycleExpenseStatus(${e.id})" style="cursor:pointer">${EXPENSE_STATUS_MAP[e.status||'pending'].label}</span></td><td contenteditable="true" data-field="note">${e.note}</td><td><span class="btn-danger btn-sm" onclick="deleteExpense(${e.id})" style="border:none;background:none;cursor:pointer;font-size:14px">×</span></td>`;
+    tr.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; let val = cell.textContent.trim(); if (field === 'amount') { val = parseInt(val.replace(/[^\d]/g, ''), 10) || 0; cell.textContent = '¥' + val.toLocaleString(); e.amount = val; } else { e[field] = val; } }); });
+    tbody.appendChild(tr);
+  });
+  const cards = document.getElementById('expenses-cards'); cards.innerHTML = '';
+  expenses.forEach(e => {
+    const card = document.createElement('div'); card.className = 'expense-card';
+    card.innerHTML = `<div class="expense-card-head"><input type="checkbox" ${e.selected ? 'checked' : ''} onchange="toggleExpenseSelect(${e.id})"><span class="expense-card-name" contenteditable="true" data-field="name">${e.name}</span></div><div class="expense-card-meta"><span style="background:var(--accent-subtle);padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;color:var(--accent)">${e.category}</span><span class="amount" contenteditable="true" data-field="amount">¥${e.amount.toLocaleString()}</span><span class="pill ${EXPENSE_STATUS_MAP[e.status||'pending'].cls}" onclick="cycleExpenseStatus(${e.id})" style="cursor:pointer">${EXPENSE_STATUS_MAP[e.status||'pending'].label}</span></div><div style="margin-top:6px;font-size:12px;color:var(--muted)" contenteditable="true" data-field="note">${e.note || '点击添加备注'}</div><div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="expense-card-delete" onclick="deleteExpense(${e.id})">×</button></div>`;
+    card.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; let val = cell.textContent.trim(); if (field === 'amount') { val = parseInt(val.replace(/[^\d]/g, ''), 10) || 0; cell.textContent = '¥' + val.toLocaleString(); e.amount = val; } else { e[field] = val; } }); });
+    cards.appendChild(card);
+  });
+}
+function cycleExpenseStatus(id) {
+  const e = expenses.find(x => x.id === id);
+  if (!e) return;
+  const cycle = ['pending', 'paid', 'cancelled'];
+  e.status = cycle[(cycle.indexOf(e.status || 'pending') + 1) % 3];
+  renderExpenses(); syncToPlan(); savePlansData();
+}
+function toggleExpenseSelect(id) { const e = expenses.find(x => x.id === id); if (e) { e.selected = !e.selected; syncToPlan(); savePlansData(); } }
+function updateExpenseCategory(id, val) { const e = expenses.find(x => x.id === id); if (e) { e.category = val; syncToPlan(); savePlansData(); } }
+function addExpense() { expenses.push({ id: nextId.expense++, name: '新消费项目', category: '其他', amount: 0, note: '', selected: false }); renderExpenses(); syncToPlan(); savePlansData(); }
+function deleteExpense(id) { expenses = expenses.filter(e => e.id !== id); renderExpenses(); syncToPlan(); savePlansData(); }
+function renderHotels() {
+  const thead = document.getElementById('hotels-thead');
+  let headerHtml = '<tr><th class="select-cell">选定</th><th>酒店名称</th><th>位置</th><th>价格</th>';
+  hotelCriteria.forEach((c, i) => { headerHtml += '<th class="criteria-cell" style="text-align:center"><span contenteditable="true" data-criteria-idx="' + i + '" style="outline:none" onblur="renameCriteria(' + i + ', this.textContent.trim())">' + c + '</span><span class="criteria-delete" onclick="deleteCriteria(' + i + ')">×</span></th>'; });
+  headerHtml += '<th>状态</th><th style="text-align:center">综合评分</th><th></th></tr>'; thead.innerHTML = headerHtml;
+  const tbody = document.getElementById('hotels-body'); tbody.innerHTML = '';
+  hotels.forEach(h => {
+    const avg = h.scores.reduce((a, b) => a + b, 0) / h.scores.length;
+    const tr = document.createElement('tr');
+    let html = `<td class="select-cell"><input type="checkbox" ${h.selected ? 'checked' : ''} onchange="toggleHotelSelect(${h.id})"></td><td contenteditable="true" data-field="name" style="font-weight:500">${h.name}</td><td contenteditable="true" data-field="location">${h.location}</td><td contenteditable="true" data-field="price" style="font-family:var(--font-mono)">${h.price}</td>`;
+    h.scores.forEach((s, i) => { html += '<td style="text-align:center"><div class="stars">'; for (let j = 1; j <= 5; j++) html += '<span class="star ' + (j <= s ? 'filled' : '') + '" onclick="rateHotel(' + h.id + ',' + i + ',' + j + ')">★</span>'; html += '</div></td>'; });
+    html += `<td><div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" style="width:${avg*20}%;background:${avg>=4?'var(--success)':avg>=3?'oklch(70% 0.16 85)':'var(--danger)'}"></div></div><span class="score-value">${avg.toFixed(1)}</span></div></td>`;
+    html += '<td><span class="btn-danger btn-sm" onclick="deleteHotel(' + h.id + ')" style="border:none;background:none;cursor:pointer;font-size:14px">×</span></td>';
+    tr.innerHTML = html;
+    tr.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; const val = cell.textContent.trim(); h[field] = val; if (field === 'price') { const num = parseInt(val.replace(/[^\d]/g, ''), 10); if (!isNaN(num)) h.priceNum = num; } }); });
+    tbody.appendChild(tr);
+  });
+  const cards = document.getElementById('hotels-cards'); cards.innerHTML = '';
+  hotels.forEach(h => {
+    const avg = h.scores.reduce((a, b) => a + b, 0) / h.scores.length;
+    const card = document.createElement('div'); card.className = 'hotel-card';
+    let starsHtml = '';
+    h.scores.forEach((s, i) => { starsHtml += '<div class="hotel-card-criterion"><span class="criterion-name">' + hotelCriteria[i] + '</span><div class="stars">'; for (let j = 1; j <= 5; j++) starsHtml += '<span class="star ' + (j <= s ? 'filled' : '') + '" onclick="rateHotel(' + h.id + ',' + i + ',' + j + ')">★</span>'; starsHtml += '</div></div>'; });
+    card.innerHTML = `<div class="hotel-card-head"><input type="checkbox" ${h.selected ? 'checked' : ''} onchange="toggleHotelSelect(${h.id})"><span class="hotel-card-name" contenteditable="true" data-field="name">${h.name}</span></div><div class="hotel-card-meta"><span contenteditable="true" data-field="location">${h.location || '未设置'}</span><span class="price" contenteditable="true" data-field="price">${h.price || '未设置'}</span><span class="pill ${HOTEL_STATUS_MAP[h.status||'pending'].cls}" onclick="cycleHotelStatus(${h.id})" style="cursor:pointer">${HOTEL_STATUS_MAP[h.status||'pending'].label}</span></div><div class="hotel-card-criteria">${starsHtml}</div><div class="hotel-card-score"><div class="score-bar-wrap" style="flex:1"><div class="score-bar"><div class="score-bar-fill" style="width:${avg*20}%;background:${avg>=4?'var(--success)':avg>=3?'oklch(70% 0.16 85)':'var(--danger)'}"></div></div><span class="score-value">${avg.toFixed(1)}</span></div><button class="hotel-card-delete" onclick="deleteHotel(${h.id})">×</button></div>`;
+    card.querySelectorAll('[contenteditable]').forEach(cell => { cell.addEventListener('blur', () => { const field = cell.dataset.field; const val = cell.textContent.trim(); h[field] = val; if (field === 'price') { const num = parseInt(val.replace(/[^\d]/g, ''), 10); if (!isNaN(num)) h.priceNum = num; } }); });
+    cards.appendChild(card);
+  });
+}
+function cycleHotelStatus(id) {
+  const h = hotels.find(x => x.id === id);
+  if (!h) return;
+  const cycle = ['pending', 'booked', 'cancelled'];
+  h.status = cycle[(cycle.indexOf(h.status || 'pending') + 1) % 3];
+  renderHotels(); syncToPlan(); savePlansData();
+}
+function toggleHotelSelect(id) { const h = hotels.find(x => x.id === id); if (h) { h.selected = !h.selected; syncToPlan(); savePlansData(); } }
+function rateHotel(hotelId, criteriaIdx, value) { const h = hotels.find(x => x.id === hotelId); if (h) { h.scores[criteriaIdx] = value; renderHotels(); syncToPlan(); savePlansData(); } }
+function addHotel() { const scores = hotelCriteria.map(() => 3); hotels.push({ id: nextId.hotel++, name: '新酒店', location: '', price: '', priceNum: 0, scores, selected: false }); renderHotels(); syncToPlan(); savePlansData(); }
+function deleteHotel(id) { hotels = hotels.filter(h => h.id !== id); renderHotels(); syncToPlan(); savePlansData(); }
+function renameCriteria(idx, newName) { if (newName) { hotelCriteria[idx] = newName; syncToPlan(); savePlansData(); } }
+function deleteCriteria(idx) { if (hotelCriteria.length <= 1) { toast('至少保留一个评分维度'); return; } hotelCriteria.splice(idx, 1); hotels.forEach(h => h.scores.splice(idx, 1)); renderHotels(); syncToPlan(); savePlansData(); }
+function openCriteriaModal() { document.getElementById('criteria-name').value = ''; document.getElementById('criteria-modal').classList.add('show'); document.getElementById('criteria-name').focus(); }
+function closeCriteriaModal() { document.getElementById('criteria-modal').classList.remove('show'); }
+function saveCriteria() { const name = document.getElementById('criteria-name').value.trim(); if (!name) { toast('请输入维度名称'); return; } hotelCriteria.push(name); hotels.forEach(h => h.scores.push(3)); closeCriteriaModal(); renderHotels(); toast('已添加维度：' + name); syncToPlan(); savePlansData(); }
+function renderSummary() {
+  const selectedFlights = flights.filter(f => f.selected), flightTotal = selectedFlights.reduce((s, f) => s + f.price, 0);
+  const selectedHotels = hotels.filter(h => h.selected), hotelTotal = selectedHotels.reduce((s, h) => s + (h.priceNum || 0), 0);
+  const nights = trips.reduce((s, t) => s + daysBetween(parseDate(t.start), parseDate(t.end)), 0), hotelBudget = hotelTotal * nights;
+  const selectedExpenses = expenses.filter(e => e.selected), expenseTotal = selectedExpenses.reduce((s, e) => s + e.amount, 0);
+  const actualExpenseTotal = selectedExpenses.reduce((s, e) => s + (e.actual || e.amount), 0);
+  const selectedDests = destinations.filter(d => d.selected);
+  const grandTotal = flightTotal + hotelBudget + expenseTotal;
+  const doneCount = checklistItems.filter(c => c.done).length;
+  let destsHtml = '';
+  if (selectedDests.length > 0) {
+    destsHtml = '<div class="section-divider"><span>已选目的地</span></div><div class="dest-summary-list">';
+    selectedDests.forEach(d => {
+      const avg = d.scores.reduce((a, b) => a + b, 0) / d.scores.length;
+      const topScores = d.scores.map((s, i) => ({ name: destCriteria[i], score: s })).sort((a, b) => b.score - a.score).slice(0, 3);
+      destsHtml += '<div class="dest-summary-item"><div class="dest-summary-name">' + d.name + '<span class="dest-summary-country">' + (d.country || '') + '</span></div><div class="dest-summary-notes">' + (d.notes || '') + '</div><div class="dest-summary-scores">';
+      topScores.forEach(t => { destsHtml += '<span class="dest-score-tag">' + t.name + ' ' + t.score + '★</span>'; });
+      destsHtml += '</div><div class="score-bar-wrap" style="margin-top:6px"><div class="score-bar"><div class="score-bar-fill" style="width:' + (avg*20) + '%;background:' + (avg>=4?'var(--success)':avg>=3?'oklch(70% 0.16 85)':'var(--danger)') + '"></div></div><span class="score-value">' + avg.toFixed(1) + '</span></div></div>';
+    });
+    destsHtml += '</div>';
+  }
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="summary-card"><div class="summary-card-label">已选航班费用</div><div class="summary-card-value">¥${flightTotal.toLocaleString()}</div><div class="summary-card-note">${selectedFlights.length} / ${flights.length} 个航班已选</div></div>
+    <div class="summary-card"><div class="summary-card-label">已选酒店费用</div><div class="summary-card-value">¥${hotelBudget.toLocaleString()}</div><div class="summary-card-note">${selectedHotels.length} 家已选 × ${nights} 晚</div></div>
+    <div class="summary-card"><div class="summary-card-label">其他消费</div><div class="summary-card-value">¥${expenseTotal.toLocaleString()}</div><div class="summary-card-note">${selectedExpenses.length} / ${expenses.length} 项已选${actualExpenseTotal !== expenseTotal ? '<br><span style="color:' + (actualExpenseTotal > expenseTotal ? 'var(--danger)' : 'var(--success)') + '">实际 ¥' + actualExpenseTotal.toLocaleString() + '</span>' : ''}</div></div>
+    <div class="summary-card"><div class="summary-card-label">已选目的地</div><div class="summary-card-value">${selectedDests.length}</div><div class="summary-card-note">${selectedDests.map(d=>d.name).join('、') || '未选择'}</div></div>
+    <div class="summary-card"><div class="summary-card-label">行程天数</div><div class="summary-card-value">${nights} 晚</div><div class="summary-card-note">${trips.length} 段行程</div></div>
+    <div class="summary-card"><div class="summary-card-label">总预算</div><div class="summary-card-value">¥${grandTotal.toLocaleString()}</div><div class="summary-card-note">机票 + 酒店 + 其他${actualGrandTotal !== grandTotal ? '<br><span style="color:' + (actualGrandTotal > grandTotal ? 'var(--danger)' : 'var(--success)') + ';font-weight:600">实际 ¥' + actualGrandTotal.toLocaleString() + '</span>' : ''}</div></div>
+    <div class="summary-card"><div class="summary-card-label">待办进度</div><div class="summary-card-value">${doneCount}/${checklistItems.length}</div><div class="summary-card-note">${Math.round(doneCount/checklistItems.length*100)}% 完成</div></div>
+  `;
+  document.getElementById('dest-summary').innerHTML = destsHtml;
+  renderChecklist(); renderItinerarySummary();
+}
+function renderChecklist() {
+  const container = document.getElementById('checklist-items'); container.innerHTML = '';
+  checklistItems.forEach(item => {
+    const div = document.createElement('div'); div.className = 'checklist-item' + (item.done ? ' done' : '');
+    div.innerHTML = `<input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleCheck(${item.id})"><span class="checklist-text" contenteditable="true" data-id="${item.id}">${item.text}</span><span class="checklist-delete" onclick="deleteCheckItem(${item.id})">×</span>`;
+    div.querySelector('.checklist-text').addEventListener('blur', e => { item.text = e.target.textContent.trim(); });
+    container.appendChild(div);
+  });
+}
+function toggleCheck(id) { const item = checklistItems.find(c => c.id === id); if (item) { item.done = !item.done; renderSummary(); syncToPlan(); savePlansData(); } }
+function addCheckItem() { checklistItems.push({ id: nextId.check++, text: '新待办事项', done: false }); renderChecklist(); syncToPlan(); savePlansData(); const texts = document.querySelectorAll('.checklist-text'); const last = texts[texts.length - 1]; if (last) { last.focus(); document.execCommand('selectAll'); } }
+function deleteCheckItem(id) { checklistItems = checklistItems.filter(c => c.id !== id); renderSummary(); syncToPlan(); savePlansData(); }
+function renderItinerarySummary() {
+  const container = document.getElementById('itinerary-summary'); container.innerHTML = '<h3>行程概览</h3>';
+  [...trips].sort((a, b) => a.start.localeCompare(b.start)).forEach(trip => {
+    const div = document.createElement('div'); div.className = 'itinerary-day';
+    const dur = daysBetween(parseDate(trip.start), parseDate(trip.end));
+    div.innerHTML = `<div class="itinerary-day-header" style="border-left:3px solid ${trip.color}">${trip.name}<span>${trip.start} — ${trip.end}（${dur}晚）</span></div>`;
+    container.appendChild(div);
+  });
+}
+function showTripDetail(name, start, end) {
+  document.getElementById('trip-detail-title').textContent = name;
+  const s = parseDate(start), e = parseDate(end), dur = daysBetween(s, e) + 1;
+  document.getElementById('trip-detail-dates').textContent = start + ' — ' + end + '（' + dur + '天）';
+  document.getElementById('trip-name-detail').classList.add('show');
+}
+function closeTripDetail() { document.getElementById('trip-name-detail').classList.remove('show'); }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+// Initialize plans: try loading from localStorage, otherwise use defaults
+initPlans();
+if (!loadPlansData()) {
+  // Default data already in memory, sync to plan-1
+  syncToPlan();
+}
+loadPlan(activePlanId);
+updatePlanSelector();
+  updatePlanHeader();
+  initCover(); renderFlights(); renderDestinations(); renderExpenses();
+// Auto-save on contenteditable blur and input changes
+document.addEventListener('blur', function(e) {
+  if (e.target.hasAttribute && e.target.hasAttribute('contenteditable')) {
+    setTimeout(function() { syncToPlan(); savePlansData(); }, 150);
+  }
+}, true);
+document.addEventListener('change', function(e) {
+  if (e.target.classList && (e.target.classList.contains('note-input') || e.target.tagName === 'SELECT' || e.target.type === 'checkbox')) {
+    setTimeout(function() { syncToPlan(); savePlansData(); }, 100);
+  }
+}, true);
+requestAnimationFrame(function() { requestAnimationFrame(function() { renderCalendar(); }); });
+</script>
+</body>
+</html>
