@@ -15,7 +15,7 @@ function decodeTokenPayload(token: string): { userId?: number; role?: string } |
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes
