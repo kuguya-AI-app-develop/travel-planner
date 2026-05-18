@@ -15,6 +15,7 @@ interface SidebarProps {
   onAddPlan: (name: string) => void;
   onRenamePlan: (planId: number, name: string) => void;
   onDeletePlan: (planId: number) => void;
+  onLogout: () => void;
 }
 
 export default function Sidebar({
@@ -30,6 +31,7 @@ export default function Sidebar({
   onAddPlan,
   onRenamePlan,
   onDeletePlan,
+  onLogout,
 }: SidebarProps) {
   const tabs: { id: TabType; label: string; icon: ReactElement }[] = [
     {
@@ -202,6 +204,12 @@ export default function Sidebar({
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
           重置数据
+        </div>
+        <div className="sidebar-cover-toggle" onClick={onLogout} style={{ color: 'var(--muted)', opacity: 0.6 }}>
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <path d="M6 2H4a1 1 0 00-1 1v10a1 1 0 001 1h2M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          退出登录
         </div>
       </nav>
     </>

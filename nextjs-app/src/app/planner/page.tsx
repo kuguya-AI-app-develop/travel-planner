@@ -319,20 +319,9 @@ export default function PlannerPage() {
         onAddPlan={handleAddPlan}
         onRenamePlan={handleRenamePlan}
         onDeletePlan={handleDeletePlan}
+        onLogout={handleLogout}
       />
       <div className="main">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 32px 0' }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '6px 14px', borderRadius: '8px', fontSize: '12px',
-              border: '1px solid var(--border)', background: 'var(--surface)',
-              cursor: 'pointer', color: 'var(--muted)'
-            }}
-          >
-            退出登录
-          </button>
-        </div>
         <CoverImage visible={coverVisible} onToast={showToast} />
         {['calendar', 'flights', 'destinations', 'hotels', 'expenses', 'itinerary', 'packing', 'documents', 'plan-overview', 'summary'].includes(activeTab) && (
           <PlanMgmtBar
