@@ -342,7 +342,7 @@ th[contenteditable]:focus{background:var(--accent-subtle)}
   .doc-cards{grid-template-columns:1fr}
   .itinerary-item{gap:8px;padding:10px 14px}
   .itinerary-time{min-width:40px;font-size:11px}
-  .plan-mgmt-bar{margin:12px 16px 12px}
+  .plan-mgmt-bar{margin:12px 16px 12px 60px}
   .plan-mgmt-bar{margin-top:48px}
   .plan-cards{grid-template-columns:1fr;gap:10px}
   .plan-card-header{padding:14px 16px 10px}
