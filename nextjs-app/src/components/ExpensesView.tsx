@@ -31,6 +31,7 @@ export default function ExpensesView({
       name: '新消费',
       category: '其他',
       amount: 0,
+      status: 'planned',
       note: '',
       selected: false
     };

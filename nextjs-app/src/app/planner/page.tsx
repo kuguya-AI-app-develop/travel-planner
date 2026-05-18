@@ -262,7 +262,7 @@ export default function PlannerPage() {
   const handleSaveCriteria = useCallback((name: string) => {
     updateCurrentPlan(p => ({
       ...p,
-      criteria: [...(p as Record<string, unknown>).criteria as string[] || [], name],
+      criteria: [...((p as unknown as Record<string, unknown>).criteria as string[] || []), name],
       hotels: p.hotels.map(h => ({ ...h, scores: [...h.scores, 3] })),
     }))
     setCriteriaModalShow(false)
@@ -272,7 +272,7 @@ export default function PlannerPage() {
   const handleSaveDestCriteria = useCallback((name: string) => {
     updateCurrentPlan(p => ({
       ...p,
-      destCriteria: [...(p as Record<string, unknown>).destCriteria as string[] || [], name],
+      destCriteria: [...((p as unknown as Record<string, unknown>).destCriteria as string[] || []), name],
       destinations: p.destinations.map(d => ({ ...d, scores: [...d.scores, 3] })),
     }))
     setDestCriteriaModalShow(false)
@@ -282,8 +282,8 @@ export default function PlannerPage() {
   const handleSaveFlightCriteria = useCallback((name: string) => {
     updateCurrentPlan(p => ({
       ...p,
-      flightCriteria: [...(p as Record<string, unknown>).flightCriteria as string[] || [], name],
-      flights: p.flights.map(f => ({ ...f, notes: { ...f.notes, [((p as Record<string, unknown>).flightCriteria as string[] || []).length]: '' } })),
+      flightCriteria: [...((p as unknown as Record<string, unknown>).flightCriteria as string[] || []), name],
+      flights: p.flights.map(f => ({ ...f, notes: { ...f.notes, [((p as unknown as Record<string, unknown>).flightCriteria as string[] || []).length]: '' } })),
     }))
     setFlightCriteriaModalShow(false)
     showToast('已添加维度：' + name)
@@ -356,7 +356,7 @@ export default function PlannerPage() {
         {activeTab === 'flights' && (
           <FlightsView
             flights={currentPlan.flights}
-            criteria={(currentPlan as Record<string, unknown>).flightCriteria as string[] || ['中转', '行李额度', '准点率', '舒适度']}
+            criteria={(currentPlan as unknown as Record<string, unknown>).flightCriteria as string[] || ['中转', '行李额度', '准点率', '舒适度']}
             onUpdateFlights={(flights) => updateCurrentPlan(p => ({ ...p, flights }))}
             onOpenCriteriaModal={() => { setFlightCriteriaModalShow(true); setModalKey(k => k + 1) }}
             onToast={showToast}
@@ -365,7 +365,7 @@ export default function PlannerPage() {
         {activeTab === 'destinations' && (
           <DestinationsView
             destinations={currentPlan.destinations}
-            criteria={(currentPlan as Record<string, unknown>).destCriteria as string[] || ['景色', '文化', '美食', '交通便利', '安全性', '性价比']}
+            criteria={(currentPlan as unknown as Record<string, unknown>).destCriteria as string[] || ['景色', '文化', '美食', '交通便利', '安全性', '性价比']}
             onUpdateDestinations={(destinations) => updateCurrentPlan(p => ({ ...p, destinations }))}
             onOpenCriteriaModal={() => { setDestCriteriaModalShow(true); setModalKey(k => k + 1) }}
             onToast={showToast}
@@ -374,7 +374,7 @@ export default function PlannerPage() {
         {activeTab === 'hotels' && (
           <HotelsView
             hotels={currentPlan.hotels}
-            criteria={(currentPlan as Record<string, unknown>).criteria as string[] || ['性价比', '位置', '卫生', '设施', '服务']}
+            criteria={(currentPlan as unknown as Record<string, unknown>).criteria as string[] || ['性价比', '位置', '卫生', '设施', '服务']}
             onUpdateHotels={(hotels) => updateCurrentPlan(p => ({ ...p, hotels }))}
             onUpdateCriteria={(criteria) => updateCurrentPlan(p => ({ ...p, criteria }))}
             onOpenCriteriaModal={() => { setCriteriaModalShow(true); setModalKey(k => k + 1) }}
