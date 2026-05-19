@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# Travel Planner Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+旅行计划管理网站，支持多用户、多计划管理。
 
-Currently, two official plugins are available:
+## 技术栈
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **框架**: Next.js 16 + React 19
+- **语言**: TypeScript
+- **数据库**: PostgreSQL + Prisma ORM
+- **认证**: bcryptjs + JWT
 
-## React Compiler
+## 项目结构
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+travel-planner-website/
+├── nextjs-app/          # Next.js 主应用
+│   ├── prisma/          # 数据库模型定义
+│   ├── src/
+│   │   ├── app/         # 页面路由
+│   │   ├── components/  # React 组件
+│   │   └── lib/         # 工具函数（认证、Prisma 客户端）
+│   └── package.json
+└── prototype/           # 早期 HTML 原型（存档）
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 功能
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- 用户登录/登出
+- 旅行计划创建与管理
+- 行程、航班、酒店、费用、行李等模块
+- 管理员后台
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 快速开始
+
+```bash
+cd nextjs-app
+
+# 安装依赖
+npm install
+
+# 配置环境变量
+cp .env.example .env  # 编辑 DATABASE_URL 等配置
+
+# 初始化数据库
+npx prisma db push
+
+# 启动开发服务器
+npm run dev
 ```
+
+访问 http://localhost:3000
+
+## 脚本命令
+
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 启动开发服务器 |
+| `npm run build` | 构建生产版本（含 Prisma 生成） |
+| `npm run start` | 启动生产服务器 |
+| `npm run lint` | 代码检查 |
