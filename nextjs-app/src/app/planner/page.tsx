@@ -19,6 +19,7 @@ import SummaryView from '@/components/SummaryView'
 import MobileNav from '@/components/MobileNav'
 import Toast from '@/components/Toast'
 import PlanMgmtBar from '@/components/PlanMgmtBar'
+import ApiKeyModal from '@/components/ApiKeyModal'
 import { useRouter } from 'next/navigation'
 
 function createDefaultPlan(name: string, id: number): Plan {
@@ -88,6 +89,8 @@ export default function PlannerPage() {
   const [toastMsg, setToastMsg] = useState('')
   const [toastShow, setToastShow] = useState(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const [apiKeyModalShow, setApiKeyModalShow] = useState(false)
 
   // Load plans from API
   useEffect(() => {
@@ -320,6 +323,7 @@ export default function PlannerPage() {
         onRenamePlan={handleRenamePlan}
         onDeletePlan={handleDeletePlan}
         onLogout={handleLogout}
+        onOpenAiSettings={() => setApiKeyModalShow(true)}
       />
       <div className="main">
         <CoverImage visible={coverVisible} onToast={showToast} />
@@ -458,6 +462,12 @@ export default function PlannerPage() {
         onOpenSidebar={() => setSidebarOpen(true)}
       />
       <Toast message={toastMsg} show={toastShow} />
+      <ApiKeyModal
+        show={apiKeyModalShow}
+        onClose={() => setApiKeyModalShow(false)}
+        onSaved={() => {}}
+        onToast={showToast}
+      />
     </div>
   )
 }

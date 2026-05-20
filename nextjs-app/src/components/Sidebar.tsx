@@ -16,6 +16,7 @@ interface SidebarProps {
   onRenamePlan: (planId: number, name: string) => void;
   onDeletePlan: (planId: number) => void;
   onLogout: () => void;
+  onOpenAiSettings: () => void;
 }
 
 export default function Sidebar({
@@ -32,6 +33,7 @@ export default function Sidebar({
   onRenamePlan,
   onDeletePlan,
   onLogout,
+  onOpenAiSettings,
 }: SidebarProps) {
   const tabs: { id: TabType; label: string; icon: ReactElement }[] = [
     {
@@ -177,6 +179,14 @@ export default function Sidebar({
           预算总结
         </div>
         <div style={{ flex: 1 }} />
+        <div className="sidebar-cover-toggle" onClick={onOpenAiSettings}>
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <rect x="1" y="6" width="14" height="8" rx="2.5" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M4 6V4.5a4 4 0 018 0V6" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+            <circle cx="8" cy="10" r="1" fill="currentColor" opacity=".4"/>
+          </svg>
+          AI 设置
+        </div>
         <div className="sidebar-cover-toggle" onClick={onToggleCover}>
           <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
             <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.2" />
