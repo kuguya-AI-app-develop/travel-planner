@@ -14,6 +14,21 @@ export interface AiPlanRequest {
   specialRequests?: string    // 特殊要求（自由文本）
 }
 
+/**
+ * 清理用户输入，移除可能的 prompt injection 尝试
+ * - 移除常见注入指令模式
+ * - 截断过长输入
+ */
+function sanitizeUserInput(text: string, maxLength = 500): string {
+  return text
+    .replace(/\b(ignore|忽略|disregard)\s+(all\s+)?(previous|above|以上|之前)\s+(instructions?|指令|规则|提示)/gi, '[已过滤]')
+    .replace(/\b(you\s+are\s+now|你现在是|从现在起你是|system\s*:|assistant\s*:)/gi, '[已过滤]')
+    .replace(/\b(new\s+instructions?|新指令|新的指令)/gi, '[已过滤]')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // 去除控制字符
+    .trim()
+    .slice(0, maxLength)
+}
+
 export function buildSystemPrompt(): string {
   return `你是一个专业的旅行规划助手。用户会给你旅行需求，你需要生成一个完整的旅行计划。
 
@@ -136,33 +151,37 @@ Plan JSON 结构：
 export function buildUserPrompt(req: AiPlanRequest): string {
   const parts: string[] = []
 
+  parts.push('--- 用户需求开始 ---')
+
   if (req.destinations.length === 1) {
-    parts.push(`目的地：${req.destinations[0]}`)
+    parts.push(`目的地：${sanitizeUserInput(req.destinations[0], 200)}`)
   } else {
-    parts.push(`目的地（按顺序）：${req.destinations.join(' → ')}`)
+    const sanitizedDests = req.destinations.map(d => sanitizeUserInput(d, 200))
+    parts.push(`目的地（按顺序）：${sanitizedDests.join(' → ')}`)
   }
   parts.push(`出发日期：${req.startDate}`)
   parts.push(`返回日期：${req.endDate}`)
 
   if (req.departureCity) {
-    parts.push(`出发城市：${req.departureCity}`)
+    parts.push(`出发城市：${sanitizeUserInput(req.departureCity, 50)}`)
   }
   if (req.returnCity) {
-    parts.push(`返回城市：${req.returnCity}`)
+    parts.push(`返回城市：${sanitizeUserInput(req.returnCity, 50)}`)
   }
   if (req.hotelBudget) {
-    parts.push(`酒店预算：每晚 ${req.hotelBudget} 元人民币`)
+    parts.push(`酒店预算：每晚 ${sanitizeUserInput(req.hotelBudget, 20)} 元人民币`)
   }
   if (req.flightBudget) {
-    parts.push(`机票预算：单程 ${req.flightBudget} 元人民币`)
+    parts.push(`机票预算：单程 ${sanitizeUserInput(req.flightBudget, 20)} 元人民币`)
   }
   if (req.preferences && req.preferences.length > 0) {
-    parts.push(`旅行偏好：${req.preferences.join('、')}`)
+    parts.push(`旅行偏好：${req.preferences.map(p => sanitizeUserInput(p, 30)).join('、')}`)
   }
   if (req.specialRequests) {
-    parts.push(`特殊要求：${req.specialRequests}`)
+    parts.push(`特殊要求：${sanitizeUserInput(req.specialRequests, 1000)}`)
   }
 
+  parts.push('--- 用户需求结束 ---')
   parts.push('')
   if (req.destinations.length > 1) {
     parts.push('用户计划前往多个目的地，请按顺序规划行程，合理安排各目的地之间的交通。')

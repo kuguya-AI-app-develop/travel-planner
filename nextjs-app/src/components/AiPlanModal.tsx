@@ -152,6 +152,22 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
       return
     }
 
+    // 前端输入校验
+    for (const dest of validDestinations) {
+      if (dest.length > 200) {
+        onToast('目的地名称过长（最多 200 字）')
+        return
+      }
+    }
+    if (form.specialRequests.length > 2000) {
+      onToast('特殊要求过长（最多 2000 字）')
+      return
+    }
+    if (form.departureCity.length > 50 || form.returnCity.length > 50) {
+      onToast('城市名称过长（最多 50 字）')
+      return
+    }
+
     setStep('generating')
     setError('')
 
@@ -209,7 +225,7 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
 
   return (
     <div className="modal-overlay show" onClick={handleClose}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 520, maxHeight: '85vh', overflow: 'auto' }}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 520, maxHeight: '85vh', overflow: 'auto' }}>
 
         {/* === Step 1: 需求表单 === */}
         {step === 'form' && (
@@ -240,6 +256,7 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
                   }}
                   placeholder={index === 0 ? '第一站，例如：东京' : `第${index + 1}站`}
                   autoFocus={index === 0}
+                  maxLength={200}
                   style={{ flex: 1 }}
                 />
                 {form.destinations.length > 1 && (
@@ -310,6 +327,7 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
                   value={form.departureCity}
                   onChange={e => setForm(prev => ({ ...prev, departureCity: e.target.value }))}
                   placeholder="例如：上海"
+                  maxLength={50}
                 />
               </div>
               <div style={{ flex: 1 }}>
@@ -318,6 +336,7 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
                   value={form.returnCity}
                   onChange={e => setForm(prev => ({ ...prev, returnCity: e.target.value }))}
                   placeholder="例如：上海（可选）"
+                  maxLength={50}
                 />
               </div>
             </div>
@@ -377,6 +396,7 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
               onChange={e => setForm(prev => ({ ...prev, specialRequests: e.target.value }))}
               placeholder="例如：带老人出行需要轻松行程、想去迪士尼乐园、不吃辣..."
               rows={3}
+              maxLength={2000}
               style={{
                 width: '100%',
                 padding: '9px 12px',

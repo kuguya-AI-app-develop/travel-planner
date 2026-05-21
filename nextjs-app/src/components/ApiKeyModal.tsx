@@ -7,6 +7,23 @@ interface ApiKeyModalProps {
   onToast: (msg: string) => void
 }
 
+/**
+ * 校验 Base URL 格式（客户端侧校验，与服务端 SSRF 防护配合）
+ */
+function isValidBaseUrl(url: string): boolean {
+  if (!url) return true // 空值使用默认
+  try {
+    const parsed = new URL(url)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false
+    const hostname = parsed.hostname.toLowerCase()
+    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) return false
+    if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/.test(hostname)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 interface ApiConfig {
   provider: string
   apiKey: string
@@ -205,6 +222,10 @@ export default function ApiKeyModal({ show, onClose, onSaved, onToast }: ApiKeyM
       onToast('请先输入 API Key')
       return
     }
+    if (effectiveBaseUrl && !isValidBaseUrl(effectiveBaseUrl)) {
+      onToast('Base URL 格式无效或不允许访问内部地址')
+      return
+    }
     setTesting(true)
     setTestResult(null)
     try {
@@ -241,6 +262,10 @@ export default function ApiKeyModal({ show, onClose, onSaved, onToast }: ApiKeyM
       onToast('请选择或输入模型名称')
       return
     }
+    if (effectiveBaseUrl && !isValidBaseUrl(effectiveBaseUrl)) {
+      onToast('Base URL 格式无效或不允许访问内部地址')
+      return
+    }
     saveConfig({
       provider,
       apiKey: apiKey.trim(),
@@ -265,7 +290,7 @@ export default function ApiKeyModal({ show, onClose, onSaved, onToast }: ApiKeyM
 
   return (
     <div className={`modal-overlay ${show ? 'show' : ''}`} onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 460 }}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 460 }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <rect x="2" y="8" width="16" height="10" rx="3" stroke="var(--accent)" strokeWidth="1.3"/>

@@ -2,6 +2,8 @@
  * AI 生成 Plan 的输出校验
  */
 
+import { sanitizeString } from './validation'
+
 export interface ValidationResult {
   valid: boolean
   errors: string[]
@@ -127,30 +129,32 @@ export function validatePlanJson(data: unknown): ValidationResult {
  */
 export function sanitizePlanData(data: Record<string, unknown>): Record<string, unknown> {
   return {
-    ...data,
     status: 'draft',
     id: 0, // 由数据库分配
+    name: sanitizeString(data.name, 200),
+    startDate: data.startDate,
+    endDate: data.endDate,
     trips: Array.isArray(data.trips) ? data.trips.map((t: unknown, i: number) => {
       const trip = t as Record<string, unknown>
       return {
         id: trip.id ?? i + 1,
-        name: trip.name,
+        name: sanitizeString(trip.name, 100),
         start: trip.start,
         end: trip.end,
-        color: trip.color || `oklch(${50 + Math.random() * 20}% ${0.15 + Math.random() * 0.1} ${Math.random() * 360})`
+        color: sanitizeString(trip.color, 50) || `oklch(${50 + Math.random() * 20}% ${0.15 + Math.random() * 0.1} ${Math.random() * 360})`
       }
     }) : [],
     flights: Array.isArray(data.flights) ? data.flights.map((f: unknown, i: number) => {
       const flight = f as Record<string, unknown>
       return {
         id: flight.id ?? i + 1,
-        airline: flight.airline,
-        code: flight.code,
-        route: flight.route,
-        dep: flight.dep,
-        arr: flight.arr,
+        airline: sanitizeString(flight.airline, 50),
+        code: sanitizeString(flight.code, 20),
+        route: sanitizeString(flight.route, 100),
+        dep: sanitizeString(flight.dep, 10),
+        arr: sanitizeString(flight.arr, 10),
         price: flight.price,
-        cls: flight.cls || '经济舱',
+        cls: sanitizeString(flight.cls, 20) || '经济舱',
         status: 'pending',
         selected: false,
         notes: flight.notes || {}
@@ -160,9 +164,9 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       const dest = d as Record<string, unknown>
       return {
         id: dest.id ?? i + 1,
-        name: dest.name,
-        country: dest.country || '',
-        notes: dest.notes || '',
+        name: sanitizeString(dest.name, 100),
+        country: sanitizeString(dest.country, 50),
+        notes: sanitizeString(dest.notes, 500),
         scores: Array.isArray(dest.scores) ? dest.scores : [3, 3, 3, 3, 3, 3],
         selected: dest.selected ?? (i === 0)
       }
@@ -171,9 +175,9 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       const hotel = h as Record<string, unknown>
       return {
         id: hotel.id ?? i + 1,
-        name: hotel.name,
-        location: hotel.location || '',
-        price: hotel.price || `¥${hotel.priceNum}/晚`,
+        name: sanitizeString(hotel.name, 100),
+        location: sanitizeString(hotel.location, 200),
+        price: sanitizeString(hotel.price, 30) || `¥${hotel.priceNum}/晚`,
         priceNum: hotel.priceNum,
         scores: Array.isArray(hotel.scores) ? hotel.scores : [3, 3, 3, 3, 3],
         selected: hotel.selected ?? (i === 0)
@@ -183,11 +187,11 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       const exp = e as Record<string, unknown>
       return {
         id: exp.id ?? i + 1,
-        name: exp.name,
-        category: exp.category || '其他',
+        name: sanitizeString(exp.name, 100),
+        category: sanitizeString(exp.category, 30) || '其他',
         amount: exp.amount,
         status: 'planned',
-        note: exp.note || '',
+        note: sanitizeString(exp.note, 200),
         selected: exp.selected ?? true
       }
     }) : [],
@@ -195,7 +199,7 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       const item = c as Record<string, unknown>
       return {
         id: item.id ?? i + 1,
-        text: item.text,
+        text: sanitizeString(item.text, 200),
         done: false
       }
     }) : [],
@@ -204,10 +208,10 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       return {
         id: item.id ?? i + 1,
         date: item.date,
-        time: item.time || '09:00',
-        type: item.type || 'other',
-        title: item.title,
-        meta: item.meta || '',
+        time: sanitizeString(item.time, 10) || '09:00',
+        type: sanitizeString(item.type, 20) || 'other',
+        title: sanitizeString(item.title, 200),
+        meta: sanitizeString(item.meta, 500),
         order: item.order ?? i + 1
       }
     }) : [],
@@ -215,12 +219,12 @@ export function sanitizePlanData(data: Record<string, unknown>): Record<string, 
       const c = cat as Record<string, unknown>
       return {
         id: c.id ?? i + 1,
-        name: c.name,
+        name: sanitizeString(c.name, 50),
         items: Array.isArray(c.items) ? c.items.map((item: unknown, j: number) => {
           const p = item as Record<string, unknown>
           return {
             id: p.id ?? j + 1,
-            text: p.text,
+            text: sanitizeString(p.text, 100),
             done: false
           }
         }) : []

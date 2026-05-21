@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
+import { validateBaseUrl, validateModelName } from '@/lib/ai/validation'
 
 export async function POST(request: NextRequest) {
   const user = await getUserFromRequest()
@@ -12,8 +13,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '缺少 API Key' }, { status: 400 })
   }
 
-  const baseUrl = request.headers.get('X-Api-Base-Url') || 'https://api.openai.com/v1'
-  const model = request.headers.get('X-Model') || 'gpt-4o-mini'
+  const rawBaseUrl = request.headers.get('X-Api-Base-Url') || ''
+  const rawModel = request.headers.get('X-Model') || ''
+
+  const urlCheck = validateBaseUrl(rawBaseUrl)
+  if (!urlCheck.valid) {
+    return NextResponse.json({ error: urlCheck.error }, { status: 400 })
+  }
+
+  const modelCheck = validateModelName(rawModel)
+  if (!modelCheck.valid) {
+    return NextResponse.json({ error: modelCheck.error }, { status: 400 })
+  }
+
+  const baseUrl = rawBaseUrl || 'https://api.openai.com/v1'
+  const model = rawModel || 'gpt-4o-mini'
 
   try {
     const res = await fetch(`${baseUrl}/chat/completions`, {
@@ -47,16 +61,18 @@ export async function POST(request: NextRequest) {
     if (res.status === 429) {
       return NextResponse.json({ error: 'API 调用频率超限' }, { status: 429 })
     }
+    console.error(`[AI test-key] 上游 API 返回 ${res.status}:`, errorText.slice(0, 200))
     return NextResponse.json(
-      { error: `API 返回 ${res.status}: ${errorText.slice(0, 100)}` },
+      { error: `API 返回错误 (${res.status})，请检查配置` },
       { status: 502 }
     )
   } catch (err) {
     if (err instanceof Error && err.name === 'TimeoutError') {
       return NextResponse.json({ error: '连接超时，请检查 Base URL' }, { status: 504 })
     }
+    console.error('[AI test-key] 网络错误:', err)
     return NextResponse.json(
-      { error: `网络错误: ${err instanceof Error ? err.message : '未知错误'}` },
+      { error: '网络错误，请检查 Base URL 是否正确' },
       { status: 502 }
     )
   }
