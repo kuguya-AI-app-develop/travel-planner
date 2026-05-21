@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       const savedPlan = await prisma.plan.create({
         data: {
           userId: user.id,
-          name: (sanitized.name as string) || body.destination + '旅行计划',
+          name: (sanitized.name as string) || body.destinations[0] + '旅行计划',
           status: 'draft',
           startDate: sanitized.startDate as string,
           endDate: sanitized.endDate as string,
