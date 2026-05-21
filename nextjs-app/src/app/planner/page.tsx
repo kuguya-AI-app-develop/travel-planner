@@ -296,8 +296,17 @@ export default function PlannerPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <p style={{ color: '#71717A', fontSize: '14px' }}>加载中...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
+        <div style={{
+          width: 36,
+          height: 36,
+          border: '3px solid var(--border)',
+          borderTopColor: 'var(--accent)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: 'var(--muted)', fontSize: '15px', fontWeight: 500 }}>加载中...</p>
       </div>
     )
   }
