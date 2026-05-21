@@ -17,7 +17,8 @@ interface PlanFormData {
   endDate: string
   departureCity: string
   returnCity: string
-  budget: string
+  hotelBudget: string
+  flightBudget: string
   preferences: string[]
   specialRequests: string
 }
@@ -41,13 +42,20 @@ const PREFERENCE_OPTIONS = [
   { id: 'photography', label: '摄影打卡' },
 ]
 
-const BUDGET_OPTIONS = [
+const HOTEL_BUDGET_OPTIONS = [
   { value: '', label: '不限' },
-  { value: '3000-5000', label: '3k-5k' },
-  { value: '5000-8000', label: '5k-8k' },
-  { value: '8000-15000', label: '8k-15k' },
-  { value: '15000-30000', label: '15k-30k' },
-  { value: '30000+', label: '30k+' },
+  { value: '200-500', label: '200-500/晚' },
+  { value: '500-1000', label: '500-1000/晚' },
+  { value: '1000-2000', label: '1000-2000/晚' },
+  { value: '2000+', label: '2000+/晚' },
+]
+
+const FLIGHT_BUDGET_OPTIONS = [
+  { value: '', label: '不限' },
+  { value: '1000-2000', label: '1k-2k' },
+  { value: '2000-4000', label: '2k-4k' },
+  { value: '4000-8000', label: '4k-8k' },
+  { value: '8000+', label: '8k+' },
 ]
 
 function getDefaultDates() {
@@ -82,7 +90,8 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
     endDate: defaultDates.end,
     departureCity: '',
     returnCity: '',
-    budget: '',
+    hotelBudget: '',
+    flightBudget: '',
     preferences: [],
     specialRequests: ''
   })
@@ -98,7 +107,8 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
       endDate: dates.end,
       departureCity: '',
       returnCity: '',
-      budget: '',
+      hotelBudget: '',
+      flightBudget: '',
       preferences: [],
       specialRequests: ''
     })
@@ -165,7 +175,8 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
           endDate: form.endDate,
           departureCity: form.departureCity.trim() || undefined,
           returnCity: form.returnCity.trim() || undefined,
-          budget: form.budget || undefined,
+          hotelBudget: form.hotelBudget || undefined,
+          flightBudget: form.flightBudget || undefined,
           preferences: prefLabels.length > 0 ? prefLabels : undefined,
           specialRequests: form.specialRequests.trim() || undefined
         })
@@ -312,18 +323,36 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
             </div>
 
             {/* 预算 */}
-            <label>预算范围</label>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-              {BUDGET_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  className={`btn ${form.budget === opt.value ? 'btn-primary' : ''}`}
-                  style={{ fontSize: 12, padding: '5px 12px' }}
-                  onClick={() => setForm(prev => ({ ...prev, budget: opt.value }))}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div style={{ marginTop: 16 }}>
+              <label>酒店预算（每晚）</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                {HOTEL_BUDGET_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`btn ${form.hotelBudget === opt.value ? 'btn-primary' : ''}`}
+                    style={{ fontSize: 12, padding: '5px 12px' }}
+                    onClick={() => setForm(prev => ({ ...prev, hotelBudget: opt.value }))}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <label>机票预算（单程）</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                {FLIGHT_BUDGET_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    className={`btn ${form.flightBudget === opt.value ? 'btn-primary' : ''}`}
+                    style={{ fontSize: 12, padding: '5px 12px' }}
+                    onClick={() => setForm(prev => ({ ...prev, flightBudget: opt.value }))}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 旅行偏好 */}

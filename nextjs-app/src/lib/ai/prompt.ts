@@ -8,7 +8,8 @@ export interface AiPlanRequest {
   endDate: string             // 返回日期 YYYY-MM-DD
   departureCity?: string      // 出发城市
   returnCity?: string         // 返回城市
-  budget?: string             // 预算范围，如 "5000-10000"
+  hotelBudget?: string        // 酒店预算范围（每晚），如 "500-1000"
+  flightBudget?: string       // 机票预算范围（单程），如 "2000-4000"
   preferences?: string[]      // 旅行偏好：美食/购物/文化/自然/冒险/亲子 等
   specialRequests?: string    // 特殊要求（自由文本）
 }
@@ -149,8 +150,11 @@ export function buildUserPrompt(req: AiPlanRequest): string {
   if (req.returnCity) {
     parts.push(`返回城市：${req.returnCity}`)
   }
-  if (req.budget) {
-    parts.push(`预算范围：${req.budget} 元人民币`)
+  if (req.hotelBudget) {
+    parts.push(`酒店预算：每晚 ${req.hotelBudget} 元人民币`)
+  }
+  if (req.flightBudget) {
+    parts.push(`机票预算：单程 ${req.flightBudget} 元人民币`)
   }
   if (req.preferences && req.preferences.length > 0) {
     parts.push(`旅行偏好：${req.preferences.join('、')}`)
