@@ -3,10 +3,11 @@
  */
 
 export interface AiPlanRequest {
-  destination: string          // 目的地（必填）
+  destinations: string[]       // 目的地列表（必填）
   startDate: string           // 出发日期 YYYY-MM-DD
   endDate: string             // 返回日期 YYYY-MM-DD
   departureCity?: string      // 出发城市
+  returnCity?: string         // 返回城市
   budget?: string             // 预算范围，如 "5000-10000"
   preferences?: string[]      // 旅行偏好：美食/购物/文化/自然/冒险/亲子 等
   specialRequests?: string    // 特殊要求（自由文本）
@@ -134,12 +135,19 @@ Plan JSON 结构：
 export function buildUserPrompt(req: AiPlanRequest): string {
   const parts: string[] = []
 
-  parts.push(`目的地：${req.destination}`)
+  if (req.destinations.length === 1) {
+    parts.push(`目的地：${req.destinations[0]}`)
+  } else {
+    parts.push(`目的地（按顺序）：${req.destinations.join(' → ')}`)
+  }
   parts.push(`出发日期：${req.startDate}`)
   parts.push(`返回日期：${req.endDate}`)
 
   if (req.departureCity) {
     parts.push(`出发城市：${req.departureCity}`)
+  }
+  if (req.returnCity) {
+    parts.push(`返回城市：${req.returnCity}`)
   }
   if (req.budget) {
     parts.push(`预算范围：${req.budget} 元人民币`)
@@ -152,6 +160,9 @@ export function buildUserPrompt(req: AiPlanRequest): string {
   }
 
   parts.push('')
+  if (req.destinations.length > 1) {
+    parts.push('用户计划前往多个目的地，请按顺序规划行程，合理安排各目的地之间的交通。')
+  }
   parts.push('请根据以上需求生成完整的旅行计划 JSON。')
 
   return parts.join('\n')

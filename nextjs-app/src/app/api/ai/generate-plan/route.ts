@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   // 5. 校验必填字段
-  if (!body.destination?.trim()) {
-    return NextResponse.json({ error: '目的地不能为空' }, { status: 400 })
+  if (!Array.isArray(body.destinations) || body.destinations.filter((d: string) => d?.trim()).length === 0) {
+    return NextResponse.json({ error: '至少需要一个目的地' }, { status: 400 })
   }
   if (!body.startDate || !/^\d{4}-\d{2}-\d{2}$/.test(body.startDate)) {
     return NextResponse.json({ error: '出发日期格式错误，应为 YYYY-MM-DD' }, { status: 400 })
@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
   if (body.startDate >= body.endDate) {
     return NextResponse.json({ error: '返回日期必须晚于出发日期' }, { status: 400 })
   }
+
+  // 清理目的地数组（去掉空值）
+  body.destinations = body.destinations.filter((d: string) => d?.trim())
 
   // 6. 构造 Prompt
   const systemPrompt = buildSystemPrompt()

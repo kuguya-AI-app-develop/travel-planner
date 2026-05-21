@@ -12,10 +12,11 @@ interface AiPlanModalProps {
 type Step = 'form' | 'generating' | 'preview'
 
 interface PlanFormData {
-  destination: string
+  destinations: string[]
   startDate: string
   endDate: string
   departureCity: string
+  returnCity: string
   budget: string
   preferences: string[]
   specialRequests: string
@@ -76,10 +77,11 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
   const defaultDates = getDefaultDates()
   const [step, setStep] = useState<Step>('form')
   const [form, setForm] = useState<PlanFormData>({
-    destination: '',
+    destinations: [''],
     startDate: defaultDates.start,
     endDate: defaultDates.end,
     departureCity: '',
+    returnCity: '',
     budget: '',
     preferences: [],
     specialRequests: ''
@@ -91,10 +93,11 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
     setStep('form')
     const dates = getDefaultDates()
     setForm({
-      destination: '',
+      destinations: [''],
       startDate: dates.start,
       endDate: dates.end,
       departureCity: '',
+      returnCity: '',
       budget: '',
       preferences: [],
       specialRequests: ''
@@ -118,8 +121,9 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
   }
 
   const handleGenerate = async () => {
-    if (!form.destination.trim()) {
-      onToast('请输入目的地')
+    const validDestinations = form.destinations.filter(d => d.trim())
+    if (validDestinations.length === 0) {
+      onToast('请至少输入一个目的地')
       return
     }
     if (!form.startDate || !form.endDate) {
@@ -156,10 +160,11 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
           'X-Model': config.model
         },
         body: JSON.stringify({
-          destination: form.destination.trim(),
+          destinations: validDestinations,
           startDate: form.startDate,
           endDate: form.endDate,
           departureCity: form.departureCity.trim() || undefined,
+          returnCity: form.returnCity.trim() || undefined,
           budget: form.budget || undefined,
           preferences: prefLabels.length > 0 ? prefLabels : undefined,
           specialRequests: form.specialRequests.trim() || undefined
@@ -211,42 +216,100 @@ export default function AiPlanModal({ show, onClose, onPlanCreated, onToast, onO
               告诉我你的旅行需求，AI 会为你生成一份完整的旅行计划。
             </p>
 
-            {/* 目的地 */}
+            {/* 目的地（多选） */}
             <label>目的地 <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input
-              value={form.destination}
-              onChange={e => setForm(prev => ({ ...prev, destination: e.target.value }))}
-              placeholder="例如：东京、巴厘岛、巴黎"
-              autoFocus
-            />
+            {form.destinations.map((dest, index) => (
+              <div key={index} style={{ display: 'flex', gap: 8, marginBottom: index < form.destinations.length - 1 ? 6 : 0 }}>
+                <input
+                  value={dest}
+                  onChange={e => {
+                    const newDests = [...form.destinations]
+                    newDests[index] = e.target.value
+                    setForm(prev => ({ ...prev, destinations: newDests }))
+                  }}
+                  placeholder={index === 0 ? '第一站，例如：东京' : `第${index + 1}站`}
+                  autoFocus={index === 0}
+                  style={{ flex: 1 }}
+                />
+                {form.destinations.length > 1 && (
+                  <button
+                    className="btn"
+                    style={{ padding: '6px 10px', fontSize: 14, lineHeight: 1, color: 'var(--danger)', flexShrink: 0 }}
+                    onClick={() => {
+                      const newDests = form.destinations.filter((_, i) => i !== index)
+                      setForm(prev => ({ ...prev, destinations: newDests }))
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              className="btn"
+              style={{ fontSize: 12, padding: '5px 12px', marginTop: 4, color: 'var(--accent)' }}
+              onClick={() => setForm(prev => ({ ...prev, destinations: [...prev.destinations, ''] }))}
+            >
+              + 添加目的地
+            </button>
 
             {/* 日期 */}
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
               <div style={{ flex: 1 }}>
                 <label>出发日期 <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <input
-                  type="date"
-                  value={form.startDate}
-                  onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))}
-                />
+                <div
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                  onClick={e => {
+                    const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement | null
+                    if (input) { input.focus(); input.showPicker?.() }
+                  }}
+                >
+                  <input
+                    type="date"
+                    value={form.startDate}
+                    onChange={e => setForm(prev => ({ ...prev, startDate: e.target.value }))}
+                    style={{ cursor: 'pointer', width: '100%' }}
+                  />
+                </div>
               </div>
               <div style={{ flex: 1 }}>
                 <label>返回日期 <span style={{ color: 'var(--danger)' }}>*</span></label>
-                <input
-                  type="date"
-                  value={form.endDate}
-                  onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))}
-                />
+                <div
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                  onClick={e => {
+                    const input = e.currentTarget.querySelector('input[type="date"]') as HTMLInputElement | null
+                    if (input) { input.focus(); input.showPicker?.() }
+                  }}
+                >
+                  <input
+                    type="date"
+                    value={form.endDate}
+                    onChange={e => setForm(prev => ({ ...prev, endDate: e.target.value }))}
+                    style={{ cursor: 'pointer', width: '100%' }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* 出发城市 */}
-            <label>出发城市</label>
-            <input
-              value={form.departureCity}
-              onChange={e => setForm(prev => ({ ...prev, departureCity: e.target.value }))}
-              placeholder="例如：上海、北京（可选）"
-            />
+            {/* 出发城市 & 返回城市 */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+              <div style={{ flex: 1 }}>
+                <label>出发城市</label>
+                <input
+                  value={form.departureCity}
+                  onChange={e => setForm(prev => ({ ...prev, departureCity: e.target.value }))}
+                  placeholder="例如：上海"
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label>返回城市</label>
+                <input
+                  value={form.returnCity}
+                  onChange={e => setForm(prev => ({ ...prev, returnCity: e.target.value }))}
+                  placeholder="例如：上海（可选）"
+                />
+              </div>
+            </div>
 
             {/* 预算 */}
             <label>预算范围</label>
