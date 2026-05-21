@@ -17,6 +17,7 @@ interface SidebarProps {
   onDeletePlan: (planId: number) => void;
   onLogout: () => void;
   onOpenAiSettings: () => void;
+  onOpenAiPlan: () => void;
 }
 
 export default function Sidebar({
@@ -34,6 +35,7 @@ export default function Sidebar({
   onDeletePlan,
   onLogout,
   onOpenAiSettings,
+  onOpenAiPlan,
 }: SidebarProps) {
   const tabs: { id: TabType; label: string; icon: ReactElement }[] = [
     {
@@ -155,6 +157,33 @@ export default function Sidebar({
           onRenamePlan={onRenamePlan}
           onDeletePlan={onDeletePlan}
         />
+        <div
+          style={{
+            margin: '4px 10px 8px',
+            padding: '8px 14px',
+            borderRadius: 'var(--radius)',
+            background: 'linear-gradient(135deg, oklch(56% 0.2 265), oklch(50% 0.18 290))',
+            color: 'white',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            transition: 'opacity .15s',
+            userSelect: 'none'
+          }}
+          onClick={onOpenAiPlan}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="7.5" stroke="white" strokeWidth="1.3"/>
+            <path d="M10 6v4l2.5 2.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M14.5 3l1 1M17 5.5l-1 1" stroke="white" strokeWidth="1" strokeLinecap="round" opacity=".7"/>
+          </svg>
+          AI 智能策划
+        </div>
         <div className="sidebar-label">规划</div>
         {tabs.map((tab) => (
           <div
