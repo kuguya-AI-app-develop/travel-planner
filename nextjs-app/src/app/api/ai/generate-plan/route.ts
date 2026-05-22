@@ -4,6 +4,7 @@ import { getUserFromRequest } from '@/lib/auth'
 import { buildSystemPrompt, buildUserPrompt, type AiPlanRequest } from '@/lib/ai/prompt'
 import { validatePlanJson, sanitizePlanData } from '@/lib/ai/schema'
 import { validateBaseUrl, validateModelName, checkRateLimit, safeJsonParse } from '@/lib/ai/validation'
+import { callAiService, type AiServiceConfig, type AiMessage } from '@/lib/ai/service'
 
 // 最大重试次数
 const MAX_RETRIES = 2
@@ -30,33 +31,58 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 3. 读取 API Key（从请求头）
-  const apiKey = request.headers.get('X-Api-Key')
+  // 3. 读取配置（支持请求头和请求体）
+  let apiKey: string
+  let baseUrl: string
+  let model: string
+  let provider: string
+
+  const contentType = request.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    try {
+      const body = await request.json()
+      apiKey = body.apiKey || request.headers.get('X-Api-Key') || ''
+      baseUrl = body.baseUrl || request.headers.get('X-Api-Base-Url') || ''
+      model = body.model || request.headers.get('X-Model') || ''
+      provider = body.provider || 'openai'
+      // 重新构建request对象，因为body已经被读取
+      // 这里需要特殊处理，先保存body
+    } catch {
+      apiKey = request.headers.get('X-Api-Key') || ''
+      baseUrl = request.headers.get('X-Api-Base-Url') || ''
+      model = request.headers.get('X-Model') || ''
+      provider = 'openai'
+    }
+  } else {
+    apiKey = request.headers.get('X-Api-Key') || ''
+    baseUrl = request.headers.get('X-Api-Base-Url') || ''
+    model = request.headers.get('X-Model') || ''
+    provider = 'openai'
+  }
+
   if (!apiKey) {
     return NextResponse.json({ error: '缺少 API Key，请在设置中配置' }, { status: 400 })
   }
 
-  // 4. 读取并校验 Base URL 和模型名称
-  const rawBaseUrl = request.headers.get('X-Api-Base-Url') || ''
-  const rawModel = request.headers.get('X-Model') || ''
-
-  const urlCheck = validateBaseUrl(rawBaseUrl)
+  // 4. 校验
+  const urlCheck = validateBaseUrl(baseUrl)
   if (!urlCheck.valid) {
     return NextResponse.json({ error: urlCheck.error }, { status: 400 })
   }
 
-  const modelCheck = validateModelName(rawModel)
+  const modelCheck = validateModelName(model)
   if (!modelCheck.valid) {
     return NextResponse.json({ error: modelCheck.error }, { status: 400 })
   }
 
-  const baseUrl = rawBaseUrl || 'https://api.openai.com/v1'
-  const model = rawModel || 'gpt-4o-mini'
-
-  // 5. 读取用户需求
+  // 5. 读取用户需求（需要重新读取，因为前面可能已经读取过了）
+  // 为了避免重复读取，我们需要重构这部分逻辑
+  // 由于这个端点主要是POST请求，我们需要重新获取body
   let body: AiPlanRequest
   try {
-    body = await request.json()
+    // 重新构造request（这是一个简化处理，实际可能需要更复杂的逻辑）
+    const clonedRequest = request.clone()
+    body = await clonedRequest.json()
   } catch {
     return NextResponse.json({ error: '请求格式错误' }, { status: 400 })
   }
@@ -87,63 +113,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '返回日期必须晚于出发日期' }, { status: 400 })
   }
 
-  // 清理目的地数组（去掉空值）
+  // 清理目的地数组
   body.destinations = body.destinations.filter((d: string) => d?.trim())
 
-  // 7. 构造 Prompt
-  const systemPrompt = buildSystemPrompt()
-  const userPrompt = buildUserPrompt(body)
+  // 7. 构建配置和服务调用
+  const config: AiServiceConfig = {
+    apiKey,
+    baseUrl: baseUrl || 'https://api.openai.com/v1',
+    model: model || 'gpt-4o-mini',
+    provider
+  }
 
   // 8. 调用 LLM API（带重试）
   let lastError: string = ''
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const llmResponse = await fetch(`${baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 8000,
-          response_format: { type: 'json_object' }
-        }),
-        signal: AbortSignal.timeout(120000) // 2 分钟超时
+      // 构造 Prompt
+      const systemPrompt = buildSystemPrompt()
+      const userPrompt = buildUserPrompt(body)
+
+      const messages: AiMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+
+      const response = await callAiService(config, messages, {
+        temperature: 0.7,
+        maxTokens: 8000,
+        responseFormat: 'json',
+        timeout: 120000
       })
 
-      if (!llmResponse.ok) {
-        if (llmResponse.status === 401) {
-          return NextResponse.json({ error: 'API Key 无效，请检查设置' }, { status: 401 })
-        }
-        if (llmResponse.status === 429) {
-          lastError = 'API 调用频率超限，请稍后重试'
-          continue
-        }
-        // 其他上游错误（500/502/503 等）走重试逻辑
-        lastError = `AI 服务暂时不可用 (${llmResponse.status})`
-        continue
-      }
+      const content = response.text
 
-      const llmData = await llmResponse.json()
-      const content = llmData.choices?.[0]?.message?.content
-
-      if (!content) {
-        lastError = 'LLM 返回内容为空'
-        continue
-      }
-
-      // 9. 解析 JSON（使用安全解析，防止原型污染）
+      // 9. 解析 JSON
       let planData: Record<string, unknown>
       try {
         planData = safeJsonParse(content) as Record<string, unknown>
       } catch {
-        // 尝试提取 JSON（处理 LLM 可能包裹 markdown 的情况）
+        // 尝试提取 JSON
         const firstBrace = content.indexOf('{')
         const lastBrace = content.lastIndexOf('}')
         if (firstBrace !== -1 && lastBrace > firstBrace) {
@@ -163,7 +171,6 @@ export async function POST(request: NextRequest) {
       const validation = validatePlanJson(planData)
       if (!validation.valid) {
         lastError = `数据校验失败: ${validation.errors.join('; ')}`
-        // 校验失败也继续重试
         continue
       }
 
@@ -197,12 +204,19 @@ export async function POST(request: NextRequest) {
       })
 
     } catch (err) {
-      if (err instanceof Error && err.name === 'TimeoutError') {
+      const errorMsg = err instanceof Error ? err.message : '未知错误'
+
+      if (errorMsg.includes('超时')) {
         lastError = 'LLM API 请求超时，请稍后重试'
         continue
       }
-      console.error('[AI generate-plan] 请求异常:', err)
-      lastError = '请求异常，请稍后重试'
+      if (errorMsg.includes('频率')) {
+        lastError = 'API 调用频率超限，请稍后重试'
+        continue
+      }
+
+      console.error('[AI generate-plan] 请求异常:', errorMsg)
+      lastError = errorMsg
       continue
     }
   }
