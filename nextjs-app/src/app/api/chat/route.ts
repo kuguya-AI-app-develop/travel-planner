@@ -64,9 +64,6 @@ function buildAnthropicRequest(body: RequestBody) {
 }
 
 function getApiUrl(provider: string, baseUrl?: string): string {
-  // 如果有自定义 baseUrl，优先使用
-  if (baseUrl) return baseUrl
-
   // 各提供商的默认 API 地址
   const defaultUrls: Record<string, string> = {
     openai: 'https://api.openai.com/v1/chat/completions',
@@ -76,6 +73,20 @@ function getApiUrl(provider: string, baseUrl?: string): string {
     moonshot: 'https://api.moonshot.cn/v1/chat/completions',
     zhipu: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     baichuan: 'https://api.baichuan-ai.com/v1/chat/completions',
+  }
+
+  // 如果有自定义 baseUrl
+  if (baseUrl) {
+    // 如果已经包含完整路径（如 /chat/completions 或 /messages），直接使用
+    if (baseUrl.includes('/chat/completions') || baseUrl.includes('/messages')) {
+      return baseUrl
+    }
+    // 否则，根据 provider 自动补全路径
+    if (provider === 'anthropic') {
+      return baseUrl.replace(/\/$/, '') + '/messages'
+    }
+    // 默认按 OpenAI 兼容格式处理
+    return baseUrl.replace(/\/$/, '') + '/chat/completions'
   }
 
   return defaultUrls[provider] || ''
