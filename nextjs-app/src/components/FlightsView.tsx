@@ -170,6 +170,67 @@ export default function FlightsView({ flights, criteria, onUpdateFlights, onOpen
           </tbody>
         </table>
       </div>
+      {/* Mobile flight cards */}
+      {flights.map(f => (
+        <div key={f.id} className="flight-card">
+          <div className="flight-card-head">
+            <input type="checkbox" checked={f.selected} onChange={() => toggleSelect(f.id)} />
+            <span
+              className="flight-card-name"
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => updateField(f.id, 'airline', e.currentTarget.textContent?.trim() || '')}
+            >
+              {f.airline}
+            </span>
+            <span className={`pill ${STATUS_MAP[f.status].cls}`} onClick={() => cycleStatus(f.id)} style={{ cursor: 'pointer', flexShrink: 0 }}>
+              {STATUS_MAP[f.status].label}
+            </span>
+          </div>
+          <div className="flight-card-meta">
+            <span contentEditable suppressContentEditableWarning
+              onBlur={(e) => updateField(f.id, 'code', e.currentTarget.textContent?.trim() || '')}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
+              {f.code || '航班号'}
+            </span>
+            <span contentEditable suppressContentEditableWarning
+              onBlur={(e) => updateField(f.id, 'route', e.currentTarget.textContent?.trim() || '')}>
+              {f.route || '出发 → 到达'}
+            </span>
+            <span contentEditable suppressContentEditableWarning
+              onBlur={(e) => updateField(f.id, 'dep', e.currentTarget.textContent?.trim() || '')}
+              style={{ fontFamily: 'var(--font-mono)' }}>
+              {f.dep || '--:--'}
+            </span>
+            <span style={{ color: 'var(--muted-light)' }}>→</span>
+            <span contentEditable suppressContentEditableWarning
+              onBlur={(e) => updateField(f.id, 'arr', e.currentTarget.textContent?.trim() || '')}
+              style={{ fontFamily: 'var(--font-mono)' }}>
+              {f.arr || '--:--'}
+            </span>
+            <span className="price">¥{f.price.toLocaleString()}</span>
+            <span>{f.cls}</span>
+          </div>
+          {criteria.length > 0 && (
+            <div className="flight-card-notes">
+              {criteria.map((c, i) => (
+                <div key={i} className="flight-card-note">
+                  <span className="note-label">{c}</span>
+                  <input
+                    className="note-input"
+                    value={f.notes[i] || ''}
+                    onChange={(e) => updateNote(f.id, i, e.target.value)}
+                    placeholder="-"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flight-card-footer">
+            <button className="btn-sm" onClick={() => deleteFlight(f.id)} style={{ color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', marginLeft: 'auto' }}>删除</button>
+          </div>
+        </div>
+      ))}
       <div className="table-actions">
         <button className="btn-sm" onClick={addFlight}>+ 添加航班</button>
         <button className="btn-sm" onClick={onOpenCriteriaModal}>+ 添加评估维度</button>

@@ -302,8 +302,9 @@ export default function PlannerPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <p style={{ color: '#71717A', fontSize: '14px' }}>加载中...</p>
+      <div className="loading-screen">
+        <div className="loading-spinner" />
+        <p className="loading-text">加载中...</p>
       </div>
     )
   }
