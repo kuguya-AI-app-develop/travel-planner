@@ -21,6 +21,7 @@ import Toast from '@/components/Toast'
 import PlanMgmtBar from '@/components/PlanMgmtBar'
 import ApiKeyModal from '@/components/ApiKeyModal'
 import AiPlanModal from '@/components/AiPlanModal'
+import { ChatBot } from '@/components/ChatBot'
 import { useRouter } from 'next/navigation'
 
 function createDefaultPlan(name: string, id: number): Plan {
@@ -501,6 +502,7 @@ export default function PlannerPage() {
           setApiKeyModalShow(true)
         }}
       />
+      <ChatBot />
     </div>
   )
 }
