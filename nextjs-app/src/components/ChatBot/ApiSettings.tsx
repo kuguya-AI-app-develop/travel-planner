@@ -21,14 +21,16 @@ export default function ApiSettings({ config, onSave, onClose }: ApiSettingsProp
   const [apiKey, setApiKey] = useState(config?.apiKey || '')
   const [baseUrl, setBaseUrl] = useState(config?.baseUrl || '')
   const [showApiKey, setShowApiKey] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const currentProvider = PROVIDERS.find(p => p.value === provider)
 
   const handleSave = useCallback(() => {
     if (!model.trim() || !apiKey.trim()) {
-      alert('请填写模型名称和API Key')
+      setError('请填写模型名称和 API Key')
       return
     }
+    setError(null)
 
     onSave({
       provider,
@@ -147,8 +149,12 @@ export default function ApiSettings({ config, onSave, onClose }: ApiSettingsProp
             <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M10 6v5M10 13v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
-          <span>你的 API Key 仅在浏览器内存中临时保存，不会发送到我们的服务器。页面刷新或关闭后需要重新输入。</span>
+          <span>API Key 通过后端代理转发请求，不会暴露在前端代码中。Key 仅在当前会话中临时保存，关闭页面后自动清除。</span>
         </div>
+
+        {error && (
+          <div className="api-settings-error">{error}</div>
+        )}
       </div>
 
       <div className="api-settings-footer">
@@ -309,6 +315,15 @@ export default function ApiSettings({ config, onSave, onClose }: ApiSettingsProp
           flex-shrink: 0;
           color: #F5A623;
           margin-top: 2px;
+        }
+
+        .api-settings-error {
+          padding: 8px 12px;
+          background: #FFF0F0;
+          border: 1px solid #FFD6D6;
+          border-radius: 8px;
+          font-size: 12px;
+          color: #CC3333;
         }
 
         .api-settings-footer {

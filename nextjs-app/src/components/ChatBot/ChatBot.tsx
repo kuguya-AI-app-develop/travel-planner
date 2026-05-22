@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import type { ChatMessage, ApiConfig, ChatStatus } from '@/types/chat'
+import type { ChatMessage, ApiConfig, ChatStatus, ChatApiResponse } from '@/types/chat'
 import ApiSettings from './ApiSettings'
 import ChatMessageComponent from './ChatMessage'
 
@@ -14,6 +14,7 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
   const [status, setStatus] = useState<ChatStatus>('idle')
   const [showSettings, setShowSettings] = useState(false)
   const [apiConfig, setApiConfig] = useState<ApiConfig | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -46,95 +47,42 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
   // 生成唯一ID
   const generateId = () => `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 
-  // 调用AI API
-  const callAiApi = useCallback(async (userMessage: string): Promise<string> => {
-    if (!apiConfig) {
-      throw new Error('请先配置API设置')
-    }
-
-    const { provider, model, apiKey, baseUrl } = apiConfig
-
-    // 构建消息历史
-    const apiMessages = messages
+  // 通过后端代理调用AI API（消息作为参数传入，避免闭包 stale）
+  const callAiApi = useCallback(async (
+    currentMessages: ChatMessage[],
+    userMessage: string,
+    config: ApiConfig
+  ): Promise<string> => {
+    const apiMessages = currentMessages
       .filter(m => m.role !== 'system')
-      .map(m => ({ role: m.role, content: m.content }))
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
       .concat([{ role: 'user' as const, content: userMessage }])
 
-    let url = ''
-    let headers: Record<string, string> = {}
-    let body: Record<string, unknown> = {}
-
-    if (provider === 'openai') {
-      url = baseUrl || 'https://api.openai.com/v1/chat/completions'
-      headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      }
-      body = {
-        model,
-        messages: [
-          { role: 'system', content: '你是一个可爱的柯基旅行助手，名叫柯基小助手。你擅长帮助用户规划旅行，提供旅行建议。请用友好、活泼的语气回答问题。' },
-          ...apiMessages
-        ],
-        stream: false
-      }
-    } else if (provider === 'anthropic') {
-      url = baseUrl || 'https://api.anthropic.com/v1/messages'
-      headers = {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      }
-      body = {
-        model,
-        max_tokens: 2048,
-        system: '你是一个可爱的柯基旅行助手，名叫柯基小助手。你擅长帮助用户规划旅行，提供旅行建议。请用友好、活泼的语气回答问题。',
-        messages: apiMessages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'assistant',
-          content: m.content
-        }))
-      }
-    } else {
-      // 自定义提供商
-      url = baseUrl || ''
-      headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      }
-      body = {
-        model,
-        messages: [
-          { role: 'system', content: '你是一个可爱的柯基旅行助手，名叫柯基小助手。你擅长帮助用户规划旅行，提供旅行建议。请用友好、活泼的语气回答问题。' },
-          ...apiMessages
-        ]
-      }
-    }
-
-    const response = await fetch(url, {
+    const response = await fetch('/api/chat', {
       method: 'POST',
-      headers,
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: config.provider,
+        model: config.model,
+        apiKey: config.apiKey,
+        baseUrl: config.baseUrl,
+        messages: apiMessages
+      })
     })
 
+    const data: ChatApiResponse = await response.json()
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error?.message || `API请求失败: ${response.status}`)
+      throw new Error(data.error || `请求失败: ${response.status}`)
     }
 
-    const data = await response.json()
-
-    // 解析响应
-    if (provider === 'anthropic') {
-      return data.content?.[0]?.text || '抱歉，我没能理解你的问题。'
-    } else {
-      return data.choices?.[0]?.message?.content || '抱歉，我没能理解你的问题。'
-    }
-  }, [apiConfig, messages])
+    return data.text || '抱歉，我没能理解你的问题。'
+  }, [])
 
   // 发送消息
   const handleSend = useCallback(async () => {
     const text = inputValue.trim()
-    if (!text || status === 'loading') return
+    if (!text || status === 'loading' || !apiConfig) return
 
     // 添加用户消息
     const userMessage: ChatMessage = {
@@ -143,15 +91,20 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
       content: text,
       timestamp: Date.now()
     }
-    setMessages(prev => [...prev, userMessage])
+
+    // 用函数式更新拿到最新 messages，直接传入 API 调用，避免闭包 stale
+    let latestMessages: ChatMessage[] = []
+    setMessages(prev => {
+      latestMessages = prev
+      return [...prev, userMessage]
+    })
     setInputValue('')
     setStatus('loading')
+    setError(null)
 
     try {
-      // 调用AI API
-      const aiResponse = await callAiApi(text)
+      const aiResponse = await callAiApi(latestMessages, text, apiConfig)
 
-      // 添加AI回复
       const assistantMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
@@ -160,18 +113,12 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
       }
       setMessages(prev => [...prev, assistantMessage])
       setStatus('idle')
-    } catch (error) {
-      // 添加错误消息
-      const errorMessage: ChatMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: `抱歉，出了点问题：${error instanceof Error ? error.message : '未知错误'}。请检查API设置是否正确。`,
-        timestamp: Date.now()
-      }
-      setMessages(prev => [...prev, errorMessage])
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : '未知错误'
+      setError(errorMsg)
       setStatus('error')
     }
-  }, [inputValue, status, callAiApi])
+  }, [inputValue, status, apiConfig, callAiApi])
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -283,6 +230,12 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
                 <div className="corgi-chatbot-loading-dot" />
                 <div className="corgi-chatbot-loading-dot" />
                 <div className="corgi-chatbot-loading-dot" />
+              </div>
+            )}
+            {error && (
+              <div className="corgi-chatbot-error">
+                <span>{error}</span>
+                <button onClick={() => setError(null)}>x</button>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -525,6 +478,29 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
         @keyframes dotPulse {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
           40% { transform: scale(1); opacity: 1; }
+        }
+
+        .corgi-chatbot-error {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 10px 14px;
+          background: #FFF0F0;
+          border: 1px solid #FFD6D6;
+          border-radius: 12px;
+          margin-top: 8px;
+          font-size: 13px;
+          color: #CC3333;
+        }
+
+        .corgi-chatbot-error button {
+          background: none;
+          border: none;
+          color: #CC3333;
+          cursor: pointer;
+          font-size: 14px;
+          padding: 0 2px;
         }
 
         .corgi-chatbot-input-area {
