@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import type { ChatMessage, ApiConfig, ChatStatus, ChatApiResponse } from '@/types/chat'
-import ApiSettings from './ApiSettings'
+import type { ChatMessage, ChatStatus, ChatApiResponse } from '@/types/chat'
+import ApiKeyModal, { getStoredApiConfig } from '@/components/ApiKeyModal'
 import ChatMessageComponent from './ChatMessage'
 
 const COCORI_NAME = '柯基小助手'
@@ -12,9 +12,10 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [status, setStatus] = useState<ChatStatus>('idle')
-  const [showSettings, setShowSettings] = useState(false)
-  const [apiConfig, setApiConfig] = useState<ApiConfig | null>(null)
+  const [apiKeyModalShow, setApiKeyModalShow] = useState(false)
+  const [apiConfigured, setApiConfigured] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [toastMsg, setToastMsg] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -27,21 +28,28 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
     scrollToBottom()
   }, [messages, scrollToBottom])
 
-  // 从SessionStorage加载API配置
+  // 检查API是否已配置
   useEffect(() => {
-    const saved = sessionStorage.getItem('chatbot-api-config')
-    if (saved) {
-      try {
-        setApiConfig(JSON.parse(saved))
-      } catch { /* ignore */ }
+    const checkConfig = () => {
+      const config = getStoredApiConfig()
+      setApiConfigured(!!config?.apiKey)
     }
+    checkConfig()
+    // 监听storage变化
+    window.addEventListener('storage', checkConfig)
+    return () => window.removeEventListener('storage', checkConfig)
   }, [])
 
-  // 保存API配置到SessionStorage
-  const handleSaveApiConfig = useCallback((config: ApiConfig) => {
-    setApiConfig(config)
-    sessionStorage.setItem('chatbot-api-config', JSON.stringify(config))
-    setShowSettings(false)
+  // 打开API设置时刷新状态
+  const handleApiModalClose = useCallback(() => {
+    setApiKeyModalShow(false)
+    const config = getStoredApiConfig()
+    setApiConfigured(!!config?.apiKey)
+  }, [])
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 2000)
   }, [])
 
   // 生成唯一ID
@@ -50,9 +58,13 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
   // 通过后端代理调用AI API（消息作为参数传入，避免闭包 stale）
   const callAiApi = useCallback(async (
     currentMessages: ChatMessage[],
-    userMessage: string,
-    config: ApiConfig
+    userMessage: string
   ): Promise<string> => {
+    const config = getStoredApiConfig()
+    if (!config?.apiKey) {
+      throw new Error('请先配置API设置')
+    }
+
     const apiMessages = currentMessages
       .filter(m => m.role !== 'system')
       .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
@@ -82,7 +94,7 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
   // 发送消息
   const handleSend = useCallback(async () => {
     const text = inputValue.trim()
-    if (!text || status === 'loading' || !apiConfig) return
+    if (!text || status === 'loading' || !apiConfigured) return
 
     // 添加用户消息
     const userMessage: ChatMessage = {
@@ -103,7 +115,7 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
     setError(null)
 
     try {
-      const aiResponse = await callAiApi(latestMessages, text, apiConfig)
+      const aiResponse = await callAiApi(latestMessages, text)
 
       const assistantMessage: ChatMessage = {
         id: generateId(),
@@ -118,7 +130,7 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
       setError(errorMsg)
       setStatus('error')
     }
-  }, [inputValue, status, apiConfig, callAiApi])
+  }, [inputValue, status, apiConfigured, callAiApi])
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -163,7 +175,7 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
             <div className="corgi-chatbot-header-actions">
               <button
                 className="corgi-chatbot-header-btn"
-                onClick={() => setShowSettings(!showSettings)}
+                onClick={() => setApiKeyModalShow(true)}
                 title="API设置"
               >
                 <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
@@ -192,15 +204,6 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
             </div>
           </div>
 
-          {/* API设置面板 */}
-          {showSettings && (
-            <ApiSettings
-              config={apiConfig}
-              onSave={handleSaveApiConfig}
-              onClose={() => setShowSettings(false)}
-            />
-          )}
-
           {/* 消息区域 */}
           <div className="corgi-chatbot-messages">
             {messages.length === 0 && (
@@ -212,10 +215,10 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
                 <p className="corgi-chatbot-welcome-sub">
                   有什么旅行问题都可以问我哦!
                 </p>
-                {!apiConfig && (
+                {!apiConfigured && (
                   <button
                     className="corgi-chatbot-welcome-btn"
-                    onClick={() => setShowSettings(true)}
+                    onClick={() => setApiKeyModalShow(true)}
                   >
                     点击这里设置API
                   </button>
@@ -249,14 +252,14 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={apiConfig ? "输入你的问题..." : "请先设置API..."}
-              disabled={!apiConfig || status === 'loading'}
+              placeholder={apiConfigured ? "输入你的问题..." : "请先点击右上角齿轮设置API"}
+              disabled={!apiConfigured || status === 'loading'}
               rows={1}
             />
             <button
               className="corgi-chatbot-send-btn"
               onClick={handleSend}
-              disabled={!apiConfig || !inputValue.trim() || status === 'loading'}
+              disabled={!apiConfigured || !inputValue.trim() || status === 'loading'}
             >
               <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                 <path d="M12 2L12 22M12 22L5 15M12 22L19 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" transform="rotate(180 12 12)"/>
@@ -265,6 +268,17 @@ export default function ChatBot({ avatarUrl = '/chatbot-avatar.jpg' }: { avatarU
           </div>
         </div>
       )}
+
+      {/* API设置弹窗 */}
+      <ApiKeyModal
+        show={apiKeyModalShow}
+        onClose={handleApiModalClose}
+        onSaved={() => {
+          setApiConfigured(true)
+          showToast('API 配置已保存')
+        }}
+        onToast={showToast}
+      />
 
       <style jsx>{`
         .corgi-chatbot-fab {
