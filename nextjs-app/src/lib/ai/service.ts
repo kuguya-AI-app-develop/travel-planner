@@ -40,6 +40,16 @@ export interface AiCallOptions {
 // URL解析
 // ============================================================
 
+const DEFAULT_MODELS: Record<string, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-3-haiku-20240307',
+  deepseek: 'deepseek-chat',
+  qwen: 'qwen-turbo',
+  moonshot: 'moonshot-v1-8k',
+  zhipu: 'glm-4-flash',
+  baichuan: 'Baichuan4',
+}
+
 const DEFAULT_URLS: Record<string, string> = {
   openai: 'https://api.openai.com/v1/chat/completions',
   anthropic: 'https://api.anthropic.com/v1/messages',
@@ -95,7 +105,6 @@ function buildAnthropicRequest(messages: AiMessage[], options: AiCallOptions = {
   const nonSystemMessages = merged.filter(m => m.role !== 'system')
 
   return {
-    model: '', // 由调用者设置
     max_tokens: options.maxTokens ?? 2048,
     system: systemMessage?.content,
     messages: nonSystemMessages.map(m => ({
@@ -175,6 +184,17 @@ function extractUsage(provider: string = 'openai', data: OpenAIResponse | Anthro
 /**
  * 统一的AI服务调用函数
  */
+const MAX_RETRIES = 2
+const RETRY_BASE_DELAY = 1000
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || (status >= 500 && status < 600)
+}
+
 export async function callAiService(
   config: AiServiceConfig,
   messages: AiMessage[],
@@ -182,7 +202,7 @@ export async function callAiService(
 ): Promise<AiResponse> {
   const { apiKey, provider = 'openai' } = config
   const url = resolveApiUrl(config.provider, config.baseUrl)
-  const model = config.model || (provider === 'openai' ? 'gpt-4o-mini' : 'claude-3-haiku-20240307')
+  const model = config.model || DEFAULT_MODELS[provider] || 'gpt-4o-mini'
 
   if (!apiKey) {
     throw new Error('缺少 API Key')
@@ -193,59 +213,86 @@ export async function callAiService(
   }
 
   // 构建请求体
+  const callOptions = { ...options }
+  if (provider === 'anthropic' && callOptions.responseFormat === 'json') {
+    // Anthropic不支持response_format，在system消息中追加JSON指令
+    const systemIdx = messages.findIndex(m => m.role === 'system')
+    const jsonHint = '\n\n请以有效的JSON格式回复。'
+    if (systemIdx >= 0) {
+      messages = messages.map((m, i) =>
+        i === systemIdx ? { ...m, content: m.content + jsonHint } : m
+      )
+    } else {
+      messages = [{ role: 'system', content: '请以有效的JSON格式回复。' }, ...messages]
+    }
+    delete callOptions.responseFormat
+  }
+
   let requestBody: Record<string, unknown>
   if (provider === 'anthropic') {
-    const anthropicReq = buildAnthropicRequest(messages, options)
+    const anthropicReq = buildAnthropicRequest(messages, callOptions)
     requestBody = { ...anthropicReq, model }
   } else {
     requestBody = {
       model,
-      ...buildOpenAIRequest(messages, options)
+      ...buildOpenAIRequest(messages, callOptions)
     }
   }
 
-  // 构建请求头
   const headers = buildHeaders(provider, apiKey)
-
-  // 发送请求
   const timeout = options.timeout ?? 60000
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(timeout)
-  })
 
-  // 处理错误
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
-    console.error(`[AI Service] 上游返回 ${response.status}:`, errorText.slice(0, 300))
+  // 带指数退避的重试循环
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await sleep(RETRY_BASE_DELAY * Math.pow(2, attempt - 1))
+    }
 
-    if (response.status === 401) {
-      throw new Error('API Key 无效')
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(timeout)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      console.error(`[AI Service] 上游返回 ${response.status}:`, errorText.slice(0, 300))
+
+      // 可重试的状态码且还有重试次数
+      if (isRetryableStatus(response.status) && attempt < MAX_RETRIES) {
+        console.warn(`[AI Service] 第 ${attempt + 1} 次重试，状态码 ${response.status}`)
+        continue
+      }
+
+      if (response.status === 401) {
+        throw new Error('API Key 无效')
+      }
+      if (response.status === 403) {
+        throw new Error('API Key 无权限')
+      }
+      if (response.status === 404) {
+        throw new Error('API 端点不存在，请检查 Base URL')
+      }
+      if (response.status === 429) {
+        throw new Error('API 调用频率超限，请稍后重试')
+      }
+      throw new Error(`上游 API 返回错误 (${response.status})`)
     }
-    if (response.status === 403) {
-      throw new Error('API Key 无权限')
+
+    // 解析响应
+    const data: OpenAIResponse | AnthropicResponse = await response.json()
+    const text = extractResponseText(provider, data)
+    const usage = extractUsage(provider, data)
+
+    if (!text) {
+      throw new Error('AI 返回内容为空')
     }
-    if (response.status === 404) {
-      throw new Error('API 端点不存在，请检查 Base URL')
-    }
-    if (response.status === 429) {
-      throw new Error('API 调用频率超限，请稍后重试')
-    }
-    throw new Error(`上游 API 返回错误 (${response.status})`)
+
+    return { text, usage }
   }
 
-  // 解析响应
-  const data: OpenAIResponse | AnthropicResponse = await response.json()
-  const text = extractResponseText(provider, data)
-  const usage = extractUsage(provider, data)
-
-  if (!text) {
-    throw new Error('AI 返回内容为空')
-  }
-
-  return { text, usage }
+  throw new Error('请求失败，已达最大重试次数')
 }
 
 /**
@@ -259,7 +306,8 @@ export async function testApiConnection(config: AiServiceConfig): Promise<boolea
       { maxTokens: 5, timeout: 15000 }
     )
     return true
-  } catch {
+  } catch (err) {
+    console.error('[AI Service] 连接测试失败:', err instanceof Error ? err.message : err)
     return false
   }
 }
