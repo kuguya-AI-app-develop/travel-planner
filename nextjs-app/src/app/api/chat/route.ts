@@ -64,14 +64,21 @@ function buildAnthropicRequest(body: RequestBody) {
 }
 
 function getApiUrl(provider: string, baseUrl?: string): string {
-  switch (provider) {
-    case 'openai':
-      return baseUrl || 'https://api.openai.com/v1/chat/completions'
-    case 'anthropic':
-      return baseUrl || 'https://api.anthropic.com/v1/messages'
-    default:
-      return baseUrl || ''
+  // 如果有自定义 baseUrl，优先使用
+  if (baseUrl) return baseUrl
+
+  // 各提供商的默认 API 地址
+  const defaultUrls: Record<string, string> = {
+    openai: 'https://api.openai.com/v1/chat/completions',
+    anthropic: 'https://api.anthropic.com/v1/messages',
+    deepseek: 'https://api.deepseek.com/v1/chat/completions',
+    qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+    moonshot: 'https://api.moonshot.cn/v1/chat/completions',
+    zhipu: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    baichuan: 'https://api.baichuan-ai.com/v1/chat/completions',
   }
+
+  return defaultUrls[provider] || ''
 }
 
 function buildHeaders(provider: string, apiKey: string): Record<string, string> {
