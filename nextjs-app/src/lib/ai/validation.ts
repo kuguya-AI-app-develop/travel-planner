@@ -17,9 +17,23 @@ const PRIVATE_IP_PATTERNS = [
   /^fc00:/i,
   /^fe80:/i,
   /^fd/i,
+  // IPv6 mapped IPv4 点分十进制形式（如 ::ffff:127.0.0.1）
+  /^::ffff:(127|10|172\.(1[6-9]|2\d|3[01])|192\.168|169\.254)\./i,
+  /^0:0:0:0:0:ffff:(127|10|172\.(1[6-9]|2\d|3[01])|192\.168|169\.254)\./i,
 ]
 
-const BLOCKED_HOSTNAMES = ['localhost', 'metadata.google.internal', 'instance-data']
+// Node.js URL 会将 IPv6 mapped IPv4 转为十六进制形式
+// 如 ::ffff:127.0.0.1 → ::ffff:7f00:1
+const IPV6_MAPPED_PRIVATE_HEX = [
+  /^::ffff:7f/i,                    // 127.0.0.0/8  → 7f00:0 - 7fff:ffff
+  /^::ffff:a00:/i,                  // 10.0.0.0/8   → a00:0 - aff:ffff（单字节）
+  /^::ffff:a[0-9a-f]{2}:/i,        // 10.0.0.0/8   → aXX:（兼容两位十六进制）
+  /^::ffff:ac(1[0-9a-f]|2[0-9a-f]):/i, // 172.16.0.0/12
+  /^::ffff:c0a8:/i,                 // 192.168.0.0/16
+  /^::ffff:a9fe:/i,                 // 169.254.0.0/16
+]
+
+const BLOCKED_HOSTNAMES = ['localhost', 'metadata.google.internal', 'instance-data', '0.0.0.0']
 
 /**
  * 校验 Base URL 是否安全（防 SSRF）
@@ -40,13 +54,21 @@ export function validateBaseUrl(url: string): { valid: boolean; error?: string }
     return { valid: false, error: 'Base URL 必须使用 http 或 https 协议' }
   }
 
-  const hostname = parsed.hostname.toLowerCase()
+  // 取出 hostname，去除 IPv6 方括号后统一校验
+  const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '')
 
   if (BLOCKED_HOSTNAMES.includes(hostname)) {
     return { valid: false, error: '不允许访问内部地址' }
   }
 
   for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      return { valid: false, error: '不允许访问私有网络地址' }
+    }
+  }
+
+  // 检查十六进制形式的 IPv6 mapped IPv4
+  for (const pattern of IPV6_MAPPED_PRIVATE_HEX) {
     if (pattern.test(hostname)) {
       return { valid: false, error: '不允许访问私有网络地址' }
     }
