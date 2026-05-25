@@ -25,12 +25,26 @@ async function request<T>(
     headers,
   })
 
+  // Debug: log response info
+  console.log(`[API] ${options.method || 'GET'} ${API_URL}${endpoint} -> status: ${response.status}`)
+  console.log(`[API] content-type: ${response.headers.get('content-type')}`)
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: '请求失败' }))
-    throw new Error(error.error || `HTTP ${response.status}`)
+    const text = await response.text()
+    console.log(`[API] error body (first 200 chars): ${text.slice(0, 200)}`)
+    let errorMsg = '请求失败'
+    try {
+      const error = JSON.parse(text)
+      errorMsg = error.error || errorMsg
+    } catch {
+      // response is not JSON
+    }
+    throw new Error(errorMsg || `HTTP ${response.status}`)
   }
 
-  return response.json()
+  const text = await response.text()
+  console.log(`[API] response body (first 200 chars): ${text.slice(0, 200)}`)
+  return JSON.parse(text)
 }
 
 export const api = {
