@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     const token = generateToken(user.id, user.role)
 
     const response = NextResponse.json({
-      user: { id: user.id, username: user.username, role: user.role }
+      user: { id: user.id, username: user.username, role: user.role },
+      token
     })
 
     response.cookies.set('token', token, {

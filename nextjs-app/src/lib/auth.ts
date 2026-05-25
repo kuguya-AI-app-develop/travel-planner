@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { prisma } from './prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret'
@@ -26,8 +26,17 @@ export function verifyToken(token: string): { userId: number; role: string } | n
 }
 
 export async function getUserFromRequest() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('token')?.value
+  const headerStore = await headers()
+  const authHeader = headerStore.get('authorization')
+  let token: string | undefined
+
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7)
+  } else {
+    const cookieStore = await cookies()
+    token = cookieStore.get('token')?.value
+  }
+
   if (!token) return null
 
   const payload = verifyToken(token)
