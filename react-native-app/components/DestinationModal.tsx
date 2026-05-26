@@ -16,12 +16,13 @@ const DEFAULT_DIMENSIONS = ['景色', '文化', '美食', '交通便利', '安�
 interface DestinationModalProps {
   visible: boolean;
   destination?: Destination | null;
+  saving?: boolean;
   onSave: (data: Omit<Destination, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function DestinationModal({ visible, destination, onSave, onDelete, onClose }: DestinationModalProps) {
+export default function DestinationModal({ visible, destination, saving, onSave, onDelete, onClose }: DestinationModalProps) {
   const [name, setName] = useState('');
   const [country, setCountry] = useState('');
   const [notes, setNotes] = useState('');
@@ -124,8 +125,8 @@ export default function DestinationModal({ visible, destination, onSave, onDelet
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import ApiKeyModal from '../components/ApiKeyModal';
 
 const STORAGE_KEY = 'ai_config';
@@ -46,7 +46,7 @@ export default function ChatScreen() {
 
   const loadConfig = useCallback(async () => {
     try {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      const saved = await SecureStore.getItemAsync(STORAGE_KEY);
       if (saved) {
         setConfig(JSON.parse(saved));
       }

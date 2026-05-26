@@ -10,6 +10,7 @@ export default function ExpensesScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const expenses = selectedPlan?.expenses ?? [];
@@ -21,8 +22,8 @@ export default function ExpensesScreen() {
 
   const handleSave = useCallback(
     async (data: Omit<Expense, 'id'> & { id?: number }) => {
-      if (!selectedPlan) return;
-
+      if (!selectedPlan || saving) return;
+      setSaving(true);
       let updated: Expense[];
       if (data.id) {
         updated = expenses.map((e) => (e.id === data.id ? ({ ...e, ...data } as Expense) : e));
@@ -37,13 +38,16 @@ export default function ExpensesScreen() {
         setEditingExpense(null);
       } catch (e: unknown) {
         Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+      } finally {
+        setSaving(false);
       }
     },
-    [selectedPlan, expenses, updatePlan]
+    [selectedPlan, expenses, updatePlan, saving]
   );
 
   const handleDelete = useCallback(async () => {
-    if (!selectedPlan || !editingExpense) return;
+    if (!selectedPlan || !editingExpense || saving) return;
+    setSaving(true);
     const updated = expenses.filter((e) => e.id !== editingExpense.id);
     try {
       await updatePlan(selectedPlan.id, { data: { expenses: updated } });
@@ -51,8 +55,10 @@ export default function ExpensesScreen() {
       setEditingExpense(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, expenses, editingExpense, updatePlan]);
+  }, [selectedPlan, expenses, editingExpense, updatePlan, saving]);
 
   const handleAdd = useCallback(() => {
     setEditingExpense(null);
@@ -120,6 +126,7 @@ export default function ExpensesScreen() {
       <ExpenseModal
         visible={showModal}
         expense={editingExpense}
+        saving={saving}
         onSave={handleSave}
         onDelete={editingExpense ? handleDelete : undefined}
         onClose={() => {

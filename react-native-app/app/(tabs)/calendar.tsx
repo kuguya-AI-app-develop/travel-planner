@@ -11,6 +11,7 @@ export default function CalendarScreen() {
   const [showTripModal, setShowTripModal] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const trips = selectedPlan?.trips ?? [];
@@ -28,8 +29,8 @@ export default function CalendarScreen() {
   }, []);
 
   const handleSaveTrip = useCallback(async (tripData: Omit<Trip, 'id'> & { id?: number }) => {
-    if (!selectedPlan) return;
-
+    if (!selectedPlan || saving) return;
+    setSaving(true);
     let updatedTrips: Trip[];
     if (tripData.id) {
       updatedTrips = trips.map((t) =>
@@ -45,12 +46,14 @@ export default function CalendarScreen() {
       setShowTripModal(false);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, trips, updatePlan]);
+  }, [selectedPlan, trips, updatePlan, saving]);
 
   const handleDeleteTrip = useCallback(async () => {
-    if (!selectedPlan || !editingTrip) return;
-
+    if (!selectedPlan || !editingTrip || saving) return;
+    setSaving(true);
     const updatedTrips = trips.filter((t) => t.id !== editingTrip.id);
     try {
       await updatePlan(selectedPlan.id, { data: { trips: updatedTrips } });
@@ -58,8 +61,10 @@ export default function CalendarScreen() {
       setEditingTrip(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, trips, editingTrip, updatePlan]);
+  }, [selectedPlan, trips, editingTrip, updatePlan, saving]);
 
   if (loading) {
     return (
@@ -158,6 +163,7 @@ export default function CalendarScreen() {
         visible={showTripModal}
         trip={editingTrip}
         defaultDate={defaultDate}
+        saving={saving}
         onSave={handleSaveTrip}
         onDelete={editingTrip ? handleDeleteTrip : undefined}
         onClose={() => setShowTripModal(false)}

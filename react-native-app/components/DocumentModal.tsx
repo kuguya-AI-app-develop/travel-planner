@@ -24,12 +24,13 @@ const STATUS_OPTIONS: { key: DocStatus; label: string; color: string }[] = [
 interface DocumentModalProps {
   visible: boolean;
   document?: Document | null;
+  saving?: boolean;
   onSave: (data: Omit<Document, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function DocumentModal({ visible, document, onSave, onDelete, onClose }: DocumentModalProps) {
+export default function DocumentModal({ visible, document, saving, onSave, onDelete, onClose }: DocumentModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState('护照');
   const [number, setNumber] = useState('');
@@ -140,8 +141,8 @@ export default function DocumentModal({ visible, document, onSave, onDelete, onC
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

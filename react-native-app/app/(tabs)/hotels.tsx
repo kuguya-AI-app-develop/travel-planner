@@ -10,6 +10,7 @@ export default function HotelsScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const hotels = selectedPlan?.hotels ?? [];
@@ -30,8 +31,8 @@ export default function HotelsScreen() {
   }, [selectedPlan, hotels, updatePlan]);
 
   const handleSave = useCallback(async (data: Omit<Hotel, 'id'> & { id?: number }) => {
-    if (!selectedPlan) return;
-
+    if (!selectedPlan || saving) return;
+    setSaving(true);
     let updated: Hotel[];
     if (data.id) {
       updated = hotels.map((h) =>
@@ -48,11 +49,14 @@ export default function HotelsScreen() {
       setEditingHotel(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, hotels, updatePlan]);
+  }, [selectedPlan, hotels, updatePlan, saving]);
 
   const handleDelete = useCallback(async () => {
-    if (!selectedPlan || !editingHotel) return;
+    if (!selectedPlan || !editingHotel || saving) return;
+    setSaving(true);
     const updated = hotels.filter((h) => h.id !== editingHotel.id);
     try {
       await updatePlan(selectedPlan.id, { data: { hotels: updated } });
@@ -60,8 +64,10 @@ export default function HotelsScreen() {
       setEditingHotel(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, hotels, editingHotel, updatePlan]);
+  }, [selectedPlan, hotels, editingHotel, updatePlan, saving]);
 
   const handleAdd = useCallback(() => {
     setEditingHotel(null);
@@ -133,6 +139,7 @@ export default function HotelsScreen() {
       <HotelModal
         visible={showModal}
         hotel={editingHotel}
+        saving={saving}
         onSave={handleSave}
         onDelete={editingHotel ? handleDelete : undefined}
         onClose={() => { setShowModal(false); setEditingHotel(null); }}

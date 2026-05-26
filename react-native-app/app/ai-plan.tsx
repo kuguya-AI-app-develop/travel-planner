@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { api } from '../lib/api';
 import { usePlans } from '../hooks/usePlans';
 import { Plan } from '../types';
@@ -59,7 +59,7 @@ export default function AiPlanScreen() {
 
   const loadConfig = useCallback(async () => {
     try {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      const saved = await SecureStore.getItemAsync(STORAGE_KEY);
       if (saved) {
         setConfig(JSON.parse(saved));
       }

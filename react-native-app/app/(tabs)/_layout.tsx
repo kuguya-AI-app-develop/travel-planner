@@ -14,21 +14,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '首页',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: '日历',
+          title: '行程日历',
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📅</Text>,
         }}
       />
       <Tabs.Screen
         name="flights"
         options={{
-          title: '航班',
+          title: '机票对比',
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>✈️</Text>,
         }}
       />
@@ -47,45 +40,52 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="more"
+        options={{
+          title: '更多',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⋯</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: '行程日历',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="expenses"
         options={{
-          title: '费用',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>💰</Text>,
+          title: '其他消费',
+          href: null,
         }}
       />
       <Tabs.Screen
         name="packing"
         options={{
-          title: '打包',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🎒</Text>,
+          title: '行李清单',
+          href: null,
         }}
       />
       <Tabs.Screen
         name="documents"
         options={{
-          title: '文档',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📄</Text>,
+          title: '证件管理',
+          href: null,
         }}
       />
       <Tabs.Screen
         name="itinerary"
         options={{
-          title: '行程',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📋</Text>,
+          title: '每日行程',
+          href: null,
         }}
       />
       <Tabs.Screen
         name="summary"
         options={{
-          title: '总结',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📝</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: '更多',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>⋯</Text>,
+          title: '预算总结',
+          href: null,
         }}
       />
     </Tabs>

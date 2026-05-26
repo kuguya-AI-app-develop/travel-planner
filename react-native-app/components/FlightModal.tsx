@@ -21,12 +21,13 @@ interface FlightModalProps {
   visible: boolean;
   flight?: Flight | null;
   criteria: string[];
+  saving?: boolean;
   onSave: (flight: Omit<Flight, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function FlightModal({ visible, flight, criteria, onSave, onDelete, onClose }: FlightModalProps) {
+export default function FlightModal({ visible, flight, criteria, saving, onSave, onDelete, onClose }: FlightModalProps) {
   const [airline, setAirline] = useState('');
   const [code, setCode] = useState('');
   const [route, setRoute] = useState('');
@@ -188,8 +189,8 @@ export default function FlightModal({ visible, flight, criteria, onSave, onDelet
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

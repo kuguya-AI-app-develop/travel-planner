@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export interface ApiConfig {
   provider: string;
@@ -136,7 +136,7 @@ export default function ApiKeyModal({ visible, onClose, onSaved }: ApiKeyModalPr
 
   async function loadConfig() {
     try {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      const saved = await SecureStore.getItemAsync(STORAGE_KEY);
       if (saved) {
         const config: ApiConfig = JSON.parse(saved);
         setProvider(config.provider || 'openai');
@@ -252,13 +252,13 @@ export default function ApiKeyModal({ visible, onClose, onSaved }: ApiKeyModalPr
       baseUrl: effectiveBaseUrl,
       model: effectiveModel,
     };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(config));
     onSaved();
     onClose();
   }
 
   async function handleClear() {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    await SecureStore.deleteItemAsync(STORAGE_KEY);
     resetForm();
     setTestResult(null);
     setIsEditing(false);

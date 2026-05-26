@@ -12,6 +12,7 @@ export default function FlightsScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingFlight, setEditingFlight] = useState<Flight | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const flights = selectedPlan?.flights ?? [];
@@ -32,8 +33,8 @@ export default function FlightsScreen() {
   }, [selectedPlan, flights, updatePlan]);
 
   const handleSaveFlight = useCallback(async (flightData: Omit<Flight, 'id'> & { id?: number }) => {
-    if (!selectedPlan) return;
-
+    if (!selectedPlan || saving) return;
+    setSaving(true);
     let updatedFlights: Flight[];
     if (flightData.id) {
       updatedFlights = flights.map((f) =>
@@ -50,11 +51,14 @@ export default function FlightsScreen() {
       setEditingFlight(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, flights, updatePlan]);
+  }, [selectedPlan, flights, updatePlan, saving]);
 
   const handleDeleteFlight = useCallback(async () => {
-    if (!selectedPlan || !editingFlight) return;
+    if (!selectedPlan || !editingFlight || saving) return;
+    setSaving(true);
     const updatedFlights = flights.filter((f) => f.id !== editingFlight.id);
     try {
       await updatePlan(selectedPlan.id, { data: { flights: updatedFlights } });
@@ -62,8 +66,10 @@ export default function FlightsScreen() {
       setEditingFlight(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, flights, editingFlight, updatePlan]);
+  }, [selectedPlan, flights, editingFlight, updatePlan, saving]);
 
   const handleAddFlight = useCallback(() => {
     setEditingFlight(null);
@@ -139,6 +145,7 @@ export default function FlightsScreen() {
         visible={showModal}
         flight={editingFlight}
         criteria={DEFAULT_CRITERIA}
+        saving={saving}
         onSave={handleSaveFlight}
         onDelete={editingFlight ? handleDeleteFlight : undefined}
         onClose={() => { setShowModal(false); setEditingFlight(null); }}

@@ -10,6 +10,7 @@ export default function DestinationsScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingDestination, setEditingDestination] = useState<Destination | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const destinations = selectedPlan?.destinations ?? [];
@@ -30,8 +31,8 @@ export default function DestinationsScreen() {
   }, [selectedPlan, destinations, updatePlan]);
 
   const handleSave = useCallback(async (data: Omit<Destination, 'id'> & { id?: number }) => {
-    if (!selectedPlan) return;
-
+    if (!selectedPlan || saving) return;
+    setSaving(true);
     let updated: Destination[];
     if (data.id) {
       updated = destinations.map((d) =>
@@ -48,11 +49,14 @@ export default function DestinationsScreen() {
       setEditingDestination(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, destinations, updatePlan]);
+  }, [selectedPlan, destinations, updatePlan, saving]);
 
   const handleDelete = useCallback(async () => {
-    if (!selectedPlan || !editingDestination) return;
+    if (!selectedPlan || !editingDestination || saving) return;
+    setSaving(true);
     const updated = destinations.filter((d) => d.id !== editingDestination.id);
     try {
       await updatePlan(selectedPlan.id, { data: { destinations: updated } });
@@ -60,8 +64,10 @@ export default function DestinationsScreen() {
       setEditingDestination(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, destinations, editingDestination, updatePlan]);
+  }, [selectedPlan, destinations, editingDestination, updatePlan, saving]);
 
   const handleAdd = useCallback(() => {
     setEditingDestination(null);
@@ -133,6 +139,7 @@ export default function DestinationsScreen() {
       <DestinationModal
         visible={showModal}
         destination={editingDestination}
+        saving={saving}
         onSave={handleSave}
         onDelete={editingDestination ? handleDelete : undefined}
         onClose={() => { setShowModal(false); setEditingDestination(null); }}

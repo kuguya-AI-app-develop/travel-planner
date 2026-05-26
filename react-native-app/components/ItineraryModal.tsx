@@ -23,12 +23,13 @@ interface ItineraryModalProps {
   visible: boolean;
   item?: ItineraryItem | null;
   defaultDate?: string;
+  saving?: boolean;
   onSave: (data: Omit<ItineraryItem, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function ItineraryModal({ visible, item, defaultDate, onSave, onDelete, onClose }: ItineraryModalProps) {
+export default function ItineraryModal({ visible, item, defaultDate, saving, onSave, onDelete, onClose }: ItineraryModalProps) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [type, setType] = useState<ItineraryItem['type']>('sight');
@@ -152,8 +153,8 @@ export default function ItineraryModal({ visible, item, defaultDate, onSave, onD
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

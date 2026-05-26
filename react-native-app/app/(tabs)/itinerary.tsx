@@ -10,6 +10,7 @@ export default function ItineraryScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ItineraryItem | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const itinerary = selectedPlan?.itinerary ?? [];
@@ -43,8 +44,8 @@ export default function ItineraryScreen() {
 
   const handleSave = useCallback(
     async (data: Omit<ItineraryItem, 'id'> & { id?: number }) => {
-      if (!selectedPlan) return;
-
+      if (!selectedPlan || saving) return;
+      setSaving(true);
       let updated: ItineraryItem[];
       if (data.id) {
         updated = itinerary.map((i) =>
@@ -61,13 +62,16 @@ export default function ItineraryScreen() {
         setEditingItem(null);
       } catch (e: unknown) {
         Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+      } finally {
+        setSaving(false);
       }
     },
-    [selectedPlan, itinerary, updatePlan]
+    [selectedPlan, itinerary, updatePlan, saving]
   );
 
   const handleDelete = useCallback(async () => {
-    if (!selectedPlan || !editingItem) return;
+    if (!selectedPlan || !editingItem || saving) return;
+    setSaving(true);
     const updated = itinerary.filter((i) => i.id !== editingItem.id);
     try {
       await updatePlan(selectedPlan.id, { data: { itinerary: updated } });
@@ -75,8 +79,10 @@ export default function ItineraryScreen() {
       setEditingItem(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, itinerary, editingItem, updatePlan]);
+  }, [selectedPlan, itinerary, editingItem, updatePlan, saving]);
 
   const handleAdd = useCallback(() => {
     setEditingItem(null);
@@ -148,6 +154,7 @@ export default function ItineraryScreen() {
       <ItineraryModal
         visible={showModal}
         item={editingItem}
+        saving={saving}
         onSave={handleSave}
         onDelete={editingItem ? handleDelete : undefined}
         onClose={() => {

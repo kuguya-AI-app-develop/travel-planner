@@ -10,6 +10,7 @@ export default function DocumentsScreen() {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState<Document | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? null;
   const documents = selectedPlan?.documents ?? [];
@@ -21,8 +22,8 @@ export default function DocumentsScreen() {
 
   const handleSave = useCallback(
     async (data: Omit<Document, 'id'> & { id?: number }) => {
-      if (!selectedPlan) return;
-
+      if (!selectedPlan || saving) return;
+      setSaving(true);
       let updated: Document[];
       if (data.id) {
         updated = documents.map((d) => (d.id === data.id ? ({ ...d, ...data } as Document) : d));
@@ -37,13 +38,16 @@ export default function DocumentsScreen() {
         setEditingDoc(null);
       } catch (e: unknown) {
         Alert.alert('错误', e instanceof Error ? e.message : '保存失败');
+      } finally {
+        setSaving(false);
       }
     },
-    [selectedPlan, documents, updatePlan]
+    [selectedPlan, documents, updatePlan, saving]
   );
 
   const handleDelete = useCallback(async () => {
-    if (!selectedPlan || !editingDoc) return;
+    if (!selectedPlan || !editingDoc || saving) return;
+    setSaving(true);
     const updated = documents.filter((d) => d.id !== editingDoc.id);
     try {
       await updatePlan(selectedPlan.id, { data: { documents: updated } });
@@ -51,8 +55,10 @@ export default function DocumentsScreen() {
       setEditingDoc(null);
     } catch (e: unknown) {
       Alert.alert('错误', e instanceof Error ? e.message : '删除失败');
+    } finally {
+      setSaving(false);
     }
-  }, [selectedPlan, documents, editingDoc, updatePlan]);
+  }, [selectedPlan, documents, editingDoc, updatePlan, saving]);
 
   const handleAdd = useCallback(() => {
     setEditingDoc(null);
@@ -120,6 +126,7 @@ export default function DocumentsScreen() {
       <DocumentModal
         visible={showModal}
         document={editingDoc}
+        saving={saving}
         onSave={handleSave}
         onDelete={editingDoc ? handleDelete : undefined}
         onClose={() => {

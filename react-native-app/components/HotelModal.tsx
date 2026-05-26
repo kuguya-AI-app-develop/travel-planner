@@ -16,12 +16,13 @@ const DEFAULT_DIMENSIONS = ['性价比', '位置', '卫生', '设施', '服务']
 interface HotelModalProps {
   visible: boolean;
   hotel?: Hotel | null;
+  saving?: boolean;
   onSave: (data: Omit<Hotel, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function HotelModal({ visible, hotel, onSave, onDelete, onClose }: HotelModalProps) {
+export default function HotelModal({ visible, hotel, saving, onSave, onDelete, onClose }: HotelModalProps) {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [price, setPrice] = useState('');
@@ -122,8 +123,8 @@ export default function HotelModal({ visible, hotel, onSave, onDelete, onClose }
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

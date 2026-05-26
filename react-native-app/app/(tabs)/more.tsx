@@ -3,29 +3,66 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 
-const MENU_ITEMS = [
-  { title: 'AI 策划', icon: '🤖', route: '/ai-plan', section: 'AI' },
-  { title: 'AI 聊天', icon: '💬', route: '/chat', section: 'AI' },
-  { title: '酒店', icon: '🏨', route: '/plan/hotels', section: '旅行' },
-  { title: '费用', icon: '💰', route: '/plan/expenses', section: '旅行' },
-  { title: '行程', icon: '📋', route: '/plan/itinerary', section: '旅行' },
-  { title: '打包', icon: '🎒', route: '/plan/packing', section: '旅行' },
-  { title: '文档', icon: '📄', route: '/plan/documents', section: '旅行' },
-  { title: '概览', icon: '📊', route: '/plan/overview', section: '旅行' },
-  { title: '总结', icon: '📝', route: '/plan/summary', section: '旅行' },
-];
-
-const SECTIONS = ['AI', '旅行'];
-
 export default function MoreScreen() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>更多功能</Text>
+
+      {/* 规划区域 */}
+      <Text style={styles.sectionTitle}>规划</Text>
+      {[
+        { icon: '💰', title: '其他消费', route: '/expenses' },
+        { icon: '📋', title: '每日行程', route: '/itinerary' },
+        { icon: '🎒', title: '行李清单', route: '/packing' },
+        { icon: '📄', title: '证件管理', route: '/documents' },
+        { icon: '📊', title: '计划总览', route: '/plan/overview' },
+      ].map((item) => (
+        <TouchableOpacity
+          key={item.title}
+          style={styles.menuItem}
+          onPress={() => router.push(item.route as any)}
+        >
+          <Text style={styles.menuIcon}>{item.icon}</Text>
+          <Text style={styles.menuText}>{item.title}</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      ))}
+
+      {/* 汇总区域 */}
+      <Text style={styles.sectionTitle}>汇总</Text>
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => router.push('/summary' as any)}
+      >
+        <Text style={styles.menuIcon}>📝</Text>
+        <Text style={styles.menuText}>预算总结</Text>
+        <Text style={styles.arrow}>›</Text>
+      </TouchableOpacity>
+
+      {/* 功能区域 */}
+      <Text style={styles.sectionTitle}>功能</Text>
+      {[
+        { icon: '🤖', title: 'AI 策划', route: '/ai-plan' },
+        { icon: '💬', title: 'AI 聊天', route: '/chat' },
+        { icon: '⚙️', title: 'AI 设置', route: '/ai-settings' },
+      ].map((item) => (
+        <TouchableOpacity
+          key={item.title}
+          style={styles.menuItem}
+          onPress={() => router.push(item.route as any)}
+        >
+          <Text style={styles.menuIcon}>{item.icon}</Text>
+          <Text style={styles.menuText}>{item.title}</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      ))}
+
+      {/* 管理区域 */}
       {isAdmin && (
-        <View>
+        <>
           <Text style={styles.sectionTitle}>管理</Text>
           <TouchableOpacity
             style={styles.menuItem}
@@ -35,24 +72,14 @@ export default function MoreScreen() {
             <Text style={styles.menuText}>管理员</Text>
             <Text style={styles.arrow}>›</Text>
           </TouchableOpacity>
-        </View>
+        </>
       )}
-      {SECTIONS.map((section) => (
-        <View key={section}>
-          <Text style={styles.sectionTitle}>{section}</Text>
-          {MENU_ITEMS.filter((item) => item.section === section).map((item) => (
-            <TouchableOpacity
-              key={item.title}
-              style={styles.menuItem}
-              onPress={() => router.push(item.route as any)}
-            >
-              <Text style={styles.menuIcon}>{item.icon}</Text>
-              <Text style={styles.menuText}>{item.title}</Text>
-              <Text style={styles.arrow}>›</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ))}
+
+      {/* 退出登录 */}
+      <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={logout}>
+        <Text style={styles.menuIcon}>🚪</Text>
+        <Text style={[styles.menuText, styles.logoutText]}>退出登录</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -80,4 +107,11 @@ const styles = StyleSheet.create({
   menuIcon: { fontSize: 20, marginRight: 12 },
   menuText: { flex: 1, fontSize: 16, color: '#1a1a1a' },
   arrow: { fontSize: 20, color: '#C7C7CC' },
+  logoutItem: {
+    marginTop: 24,
+    marginBottom: 40,
+  },
+  logoutText: {
+    color: '#FF3B30',
+  },
 });

@@ -22,12 +22,13 @@ const STATUS_OPTIONS: { key: Expense['status']; label: string; color: string }[]
 interface ExpenseModalProps {
   visible: boolean;
   expense?: Expense | null;
+  saving?: boolean;
   onSave: (data: Omit<Expense, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function ExpenseModal({ visible, expense, onSave, onDelete, onClose }: ExpenseModalProps) {
+export default function ExpenseModal({ visible, expense, saving, onSave, onDelete, onClose }: ExpenseModalProps) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('其他');
   const [amount, setAmount] = useState('');
@@ -149,8 +150,8 @@ export default function ExpenseModal({ visible, expense, onSave, onDelete, onClo
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

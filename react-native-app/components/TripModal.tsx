@@ -21,12 +21,13 @@ interface TripModalProps {
   visible: boolean;
   trip?: Trip | null;
   defaultDate?: string;
+  saving?: boolean;
   onSave: (trip: Omit<Trip, 'id'> & { id?: number }) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
 
-export default function TripModal({ visible, trip, defaultDate, onSave, onDelete, onClose }: TripModalProps) {
+export default function TripModal({ visible, trip, defaultDate, saving, onSave, onDelete, onClose }: TripModalProps) {
   const [name, setName] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
@@ -137,8 +138,8 @@ export default function TripModal({ visible, trip, defaultDate, onSave, onDelete
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>保存</Text>
+              <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                <Text style={styles.saveText}>{saving ? '保存中...' : '保存'}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
