@@ -25,3 +25,7 @@ dist-ssr
 
 # Claude Code artifacts
 .codegraph/
+
+# Development docs and phases
+coding-docs/
+react-native-app/development-phases/
