@@ -1,23 +1,53 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Colors, Typography, Spacing } from '../../src/theme';
 import { useApp } from '../../src/store/AppContext';
 import { Calendar } from '../../src/components/Calendar';
 import { Timeline } from '../../src/components/Timeline';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 
 export default function CalendarScreen() {
-  const { getActivePlan } = useApp();
+  const { getActivePlan, dispatch } = useApp();
   const plan = getActivePlan();
+
+  const handleAddTrip = () => {
+    // 这里可以添加新增行程的逻辑
+    Alert.alert('新增行程', '此功能正在开发中');
+  };
+
+  const handleEditTrip = (tripId: number) => {
+    Alert.alert('编辑行程', `编辑行程 ID: ${tripId}`);
+  };
+
+  const handleDeleteTrip = (tripId: number) => {
+    Alert.alert(
+      '确认删除',
+      '确定要删除这个行程吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: () => dispatch({ type: 'DELETE_TRIP', payload: tripId })
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>行程日历</Text>
-          <Text style={styles.subtitle}>查看行程时间安排</Text>
-        </View>
+        <ScreenHeader
+          title="行程日历"
+          subtitle="查看行程时间安排"
+        />
 
-        <Calendar trips={plan.trips} />
+        <Calendar
+          trips={plan.trips}
+          onAddTrip={handleAddTrip}
+          onEditTrip={handleEditTrip}
+          onDeleteTrip={handleDeleteTrip}
+        />
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>时间轴</Text>

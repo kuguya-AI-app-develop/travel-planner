@@ -41,15 +41,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tools"
-        options={{
-          title: '工具',
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="grid-outline" size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="ai"
         options={{
           title: 'AI',

@@ -23,19 +23,25 @@ interface AppState {
 type AppAction =
   | { type: 'SELECT_PLAN'; payload: string }
   | { type: 'CREATE_PLAN'; payload: { id: string; name: string } }
+  | { type: 'DELETE_PLAN'; payload: string }
   | { type: 'TOGGLE_FLIGHT'; payload: number }
   | { type: 'ADD_FLIGHT'; payload: Flight }
+  | { type: 'DELETE_FLIGHT'; payload: number }
   | { type: 'TOGGLE_DEST'; payload: number }
   | { type: 'ADD_DEST'; payload: Destination }
+  | { type: 'DELETE_DEST'; payload: number }
   | { type: 'TOGGLE_HOTEL'; payload: number }
   | { type: 'ADD_HOTEL'; payload: Hotel }
+  | { type: 'DELETE_HOTEL'; payload: number }
   | { type: 'RATE_HOTEL'; payload: { hotelId: number; critIdx: number; value: number } }
   | { type: 'TOGGLE_EXPENSE'; payload: number }
   | { type: 'ADD_EXPENSE'; payload: Expense }
+  | { type: 'DELETE_EXPENSE'; payload: number }
   | { type: 'TOGGLE_CHECK'; payload: number }
   | { type: 'ADD_CHECK'; payload: ChecklistItem }
   | { type: 'TOGGLE_PACK'; payload: number }
-  | { type: 'ADD_DOCUMENT'; payload: Document };
+  | { type: 'ADD_DOCUMENT'; payload: Document }
+  | { type: 'DELETE_TRIP'; payload: number };
 
 // 初始数据
 const initialState: AppState = {
@@ -150,6 +156,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
         activePlanId: action.payload.id,
       };
 
+    case 'DELETE_PLAN': {
+      const { [action.payload]: deleted, ...remainingPlans } = state.plans;
+      const newActivePlanId = state.activePlanId === action.payload
+        ? Object.keys(remainingPlans)[0] || ''
+        : state.activePlanId;
+      return {
+        ...state,
+        plans: remainingPlans,
+        activePlanId: newActivePlanId,
+      };
+    }
+
     case 'TOGGLE_FLIGHT':
       return {
         ...state,
@@ -163,6 +181,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         flights: [...state.flights, action.payload],
         nextId: { ...state.nextId, flight: state.nextId.flight + 1 },
+      };
+
+    case 'DELETE_FLIGHT':
+      return {
+        ...state,
+        flights: state.flights.filter(f => f.id !== action.payload),
       };
 
     case 'TOGGLE_DEST':
@@ -180,6 +204,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         nextId: { ...state.nextId, dest: state.nextId.dest + 1 },
       };
 
+    case 'DELETE_DEST':
+      return {
+        ...state,
+        destinations: state.destinations.filter(d => d.id !== action.payload),
+      };
+
     case 'TOGGLE_HOTEL':
       return {
         ...state,
@@ -193,6 +223,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         hotels: [...state.hotels, action.payload],
         nextId: { ...state.nextId, hotel: state.nextId.hotel + 1 },
+      };
+
+    case 'DELETE_HOTEL':
+      return {
+        ...state,
+        hotels: state.hotels.filter(h => h.id !== action.payload),
       };
 
     case 'RATE_HOTEL':
@@ -218,6 +254,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         expenses: [...state.expenses, action.payload],
         nextId: { ...state.nextId, expense: state.nextId.expense + 1 },
+      };
+
+    case 'DELETE_EXPENSE':
+      return {
+        ...state,
+        expenses: state.expenses.filter(e => e.id !== action.payload),
       };
 
     case 'TOGGLE_CHECK':
@@ -257,6 +299,18 @@ function appReducer(state: AppState, action: AppAction): AppState {
           [state.activePlanId]: {
             ...state.plans[state.activePlanId],
             documents: [...state.plans[state.activePlanId].documents, action.payload],
+          },
+        },
+      };
+
+    case 'DELETE_TRIP':
+      return {
+        ...state,
+        plans: {
+          ...state.plans,
+          [state.activePlanId]: {
+            ...state.plans[state.activePlanId],
+            trips: state.plans[state.activePlanId].trips.filter(t => t.id !== action.payload),
           },
         },
       };

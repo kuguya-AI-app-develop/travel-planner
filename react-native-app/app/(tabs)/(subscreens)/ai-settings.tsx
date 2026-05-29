@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Modal,
+  Pressable,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { saveAISettings, loadAISettings } from '../../../src/utils/secureStorage';
@@ -17,21 +20,26 @@ import { useToast } from '../../../src/hooks/useToast';
 
 const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
+  { value: 'anthropic', label: 'Anthropic' },
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'zhipu', label: '智谱 (GLM)' },
   { value: 'moonshot', label: 'Moonshot (Kimi)' },
   { value: 'qwen', label: '通义千问' },
-  { value: 'custom', label: '自定义 (OpenAI 兼容)' },
+  { value: 'custom-openai', label: '自定义 (OpenAI 兼容)' },
+  { value: 'custom-anthropic', label: '自定义 (Anthropic 兼容)' },
 ];
 
 const MODELS: Record<string, string[]> = {
   openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
+  anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001', 'claude-opus-4-20250514'],
   deepseek: ['deepseek-chat', 'deepseek-coder'],
   zhipu: ['glm-4', 'glm-4-flash'],
   moonshot: ['moonshot-v1-8k', 'moonshot-v1-32k'],
   qwen: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
-  custom: ['custom-model'],
 };
+
+// 需要自定义模型输入的 provider
+const CUSTOM_PROVIDERS = ['custom-openai', 'custom-anthropic'];
 
 // API Key格式验证
 const validateApiKey = (key: string): boolean => {
@@ -52,6 +60,10 @@ export default function AISettingsScreen() {
   const [showKey, setShowKey] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [isLoading, setIsLoading] = useState(true);
+  const [showProviderPicker, setShowProviderPicker] = useState(false);
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [customModel, setCustomModel] = useState('');
+  const isCustomProvider = CUSTOM_PROVIDERS.includes(provider);
 
   // 加载已保存的设置
   useEffect(() => {
@@ -63,7 +75,12 @@ export default function AISettingsScreen() {
       const settings = await loadAISettings();
 
       if (settings.provider) setProvider(settings.provider);
-      if (settings.model) setModel(settings.model);
+      if (settings.model) {
+        setModel(settings.model);
+        if (settings.provider && CUSTOM_PROVIDERS.includes(settings.provider)) {
+          setCustomModel(settings.model);
+        }
+      }
       if (settings.apiKey) setApiKey(settings.apiKey);
       if (settings.baseUrl) setBaseUrl(settings.baseUrl);
     } catch (e) {
@@ -75,11 +92,22 @@ export default function AISettingsScreen() {
 
   const handleProviderChange = (newProvider: string) => {
     setProvider(newProvider);
-    const models = MODELS[newProvider] || [];
-    setModel(models[0] || '');
+    if (CUSTOM_PROVIDERS.includes(newProvider)) {
+      setModel(customModel || '');
+    } else {
+      const models = MODELS[newProvider] || [];
+      setModel(models[0] || '');
+    }
   };
 
   const handleSave = async () => {
+    const finalModel = isCustomProvider ? customModel : model;
+
+    if (!finalModel) {
+      Alert.alert('提示', '请输入或选择模型名称。', [{ text: '确定' }]);
+      return;
+    }
+
     // 验证API Key
     if (apiKey && !validateApiKey(apiKey)) {
       Alert.alert(
@@ -94,7 +122,7 @@ export default function AISettingsScreen() {
       await saveAISettings({
         apiKey,
         provider,
-        model,
+        model: finalModel,
         baseUrl,
       });
       showToast('设置已保存');
@@ -184,17 +212,7 @@ export default function AISettingsScreen() {
             <Text style={styles.label}>AI 服务商</Text>
             <TouchableOpacity
               style={styles.pickerContainer}
-              onPress={() => {
-                // 这里可以添加picker弹窗
-                Alert.alert(
-                  '选择服务商',
-                  '',
-                  PROVIDERS.map(p => ({
-                    text: p.label,
-                    onPress: () => handleProviderChange(p.value),
-                  }))
-                );
-              }}
+              onPress={() => setShowProviderPicker(true)}
             >
               <Text style={styles.pickerText}>
                 {PROVIDERS.find(p => p.value === provider)?.label || '选择服务商'}
@@ -203,23 +221,28 @@ export default function AISettingsScreen() {
             </TouchableOpacity>
 
             <Text style={styles.label}>模型名称</Text>
-            <TouchableOpacity
-              style={styles.pickerContainer}
-              onPress={() => {
-                const models = MODELS[provider] || [];
-                Alert.alert(
-                  '选择模型',
-                  '',
-                  models.map(m => ({
-                    text: m,
-                    onPress: () => setModel(m),
-                  }))
-                );
-              }}
-            >
-              <Text style={styles.pickerText}>{model}</Text>
-              <Ionicons name="chevron-down" size={14} color={Colors.muted} />
-            </TouchableOpacity>
+            {isCustomProvider ? (
+              <TextInput
+                style={styles.input}
+                value={customModel}
+                onChangeText={(text) => {
+                  setCustomModel(text);
+                  setModel(text);
+                }}
+                placeholder="输入模型名称，例如 claude-sonnet-4-20250514"
+                placeholderTextColor={Colors.mutedLight}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.pickerContainer}
+                onPress={() => setShowModelPicker(true)}
+              >
+                <Text style={styles.pickerText}>{model}</Text>
+                <Ionicons name="chevron-down" size={14} color={Colors.muted} />
+              </TouchableOpacity>
+            )}
 
             <Text style={styles.label}>API Key</Text>
             <View style={styles.keyContainer}>
@@ -316,6 +339,76 @@ export default function AISettingsScreen() {
       </ScrollView>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
+
+      {/* 服务商选择弹窗 */}
+      <Modal visible={showProviderPicker} transparent animationType="fade">
+        <Pressable style={styles.modalOverlay} onPress={() => setShowProviderPicker(false)}>
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerModalTitle}>选择服务商</Text>
+            <FlatList
+              data={PROVIDERS}
+              keyExtractor={(item) => item.value}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.pickerOption,
+                    provider === item.value && styles.pickerOptionActive,
+                  ]}
+                  onPress={() => {
+                    handleProviderChange(item.value);
+                    setShowProviderPicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.pickerOptionText,
+                    provider === item.value && styles.pickerOptionTextActive,
+                  ]}>
+                    {item.label}
+                  </Text>
+                  {provider === item.value && (
+                    <Ionicons name="checkmark" size={18} color={Colors.accent} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* 模型选择弹窗 */}
+      <Modal visible={showModelPicker} transparent animationType="fade">
+        <Pressable style={styles.modalOverlay} onPress={() => setShowModelPicker(false)}>
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerModalTitle}>选择模型</Text>
+            <FlatList
+              data={MODELS[provider] || []}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.pickerOption,
+                    model === item && styles.pickerOptionActive,
+                  ]}
+                  onPress={() => {
+                    setModel(item);
+                    setShowModelPicker(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.pickerOptionText,
+                    model === item && styles.pickerOptionTextActive,
+                  ]}>
+                    {item}
+                  </Text>
+                  {model === item && (
+                    <Ionicons name="checkmark" size={18} color={Colors.accent} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -495,5 +588,45 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     color: Colors.muted,
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerModal: {
+    width: '80%',
+    maxHeight: '60%',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    ...Shadows.md,
+  },
+  pickerModalTitle: {
+    fontSize: Typography.md,
+    fontWeight: Typography.bold,
+    color: Colors.fg,
+    marginBottom: Spacing.md,
+    textAlign: 'center',
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.sm,
+  },
+  pickerOptionActive: {
+    backgroundColor: Colors.accent + '10',
+  },
+  pickerOptionText: {
+    fontSize: Typography.base,
+    color: Colors.fg,
+  },
+  pickerOptionTextActive: {
+    color: Colors.accent,
+    fontWeight: Typography.semibold,
   },
 });

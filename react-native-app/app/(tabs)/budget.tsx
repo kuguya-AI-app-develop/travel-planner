@@ -5,6 +5,7 @@ import { useApp } from '../../src/store/AppContext';
 import { SummaryCard } from '../../src/components/SummaryCard';
 import { Checklist } from '../../src/components/Checklist';
 import { Toast } from '../../src/components/Toast';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { useToast } from '../../src/hooks/useToast';
 
 export default function BudgetScreen() {
@@ -39,10 +40,10 @@ export default function BudgetScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>预算总结</Text>
-          <Text style={styles.subtitle}>汇总所有已勾选项目费用</Text>
-        </View>
+        <ScreenHeader
+          title="预算总结"
+          subtitle="汇总所有已勾选项目费用"
+        />
 
         <View style={styles.summaryGrid}>
           <SummaryCard

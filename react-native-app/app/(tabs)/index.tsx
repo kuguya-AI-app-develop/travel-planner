@@ -8,6 +8,7 @@ import { ToolCard } from '../../src/components/ToolCard';
 import { ChatFAB } from '../../src/components/ChatFAB';
 import { ChatPanel } from '../../src/components/ChatPanel';
 import { Toast } from '../../src/components/Toast';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { useToast } from '../../src/hooks/useToast';
 import { useRouter } from 'expo-router';
 
@@ -53,6 +54,7 @@ export default function HomeScreen() {
       iconBg: Colors.accent + '15',
       name: '行程日历',
       desc: `${plan.trips.length} 个行程`,
+      count: plan.trips.length,
       onPress: () => router.push('/calendar'),
     },
     {
@@ -61,6 +63,7 @@ export default function HomeScreen() {
       iconBg: Colors.teal + '15',
       name: '机票对比',
       desc: `${state.flights.length} 个航班`,
+      count: state.flights.length,
       onPress: () => router.push('/(tabs)/(subscreens)/flights'),
     },
     {
@@ -69,6 +72,7 @@ export default function HomeScreen() {
       iconBg: Colors.coral + '15',
       name: '目的地',
       desc: `${state.destinations.length} 个目的地`,
+      count: state.destinations.length,
       onPress: () => router.push('/(tabs)/(subscreens)/destinations'),
     },
     {
@@ -77,6 +81,7 @@ export default function HomeScreen() {
       iconBg: Colors.purple + '15',
       name: '酒店评分',
       desc: `${state.hotels.length} 家酒店`,
+      count: state.hotels.length,
       onPress: () => router.push('/(tabs)/(subscreens)/hotels'),
     },
     {
@@ -85,6 +90,7 @@ export default function HomeScreen() {
       iconBg: Colors.warn + '15',
       name: '其他消费',
       desc: `${state.expenses.length} 项消费`,
+      count: state.expenses.length,
       onPress: () => router.push('/(tabs)/(subscreens)/expenses'),
     },
     {
@@ -93,6 +99,7 @@ export default function HomeScreen() {
       iconBg: Colors.accent + '15',
       name: '每日行程',
       desc: `${plan.itineraryItems.length} 项活动`,
+      count: plan.itineraryItems.length,
       onPress: () => router.push('/(tabs)/(subscreens)/itinerary'),
     },
     {
@@ -109,6 +116,7 @@ export default function HomeScreen() {
       iconBg: Colors.teal + '15',
       name: '证件管理',
       desc: `${plan.documents.length} 个证件`,
+      count: plan.documents.length,
       onPress: () => router.push('/(tabs)/(subscreens)/documents'),
     },
   ];
@@ -116,10 +124,10 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>旅行策划</Text>
-          <Text style={styles.subtitle}>管理你的旅行计划</Text>
-        </View>
+        <ScreenHeader
+          title="旅行策划"
+          subtitle="管理你的旅行计划"
+        />
 
         <PlanSwitcher
           onPlanSelect={handlePlanSelect}
@@ -234,6 +242,7 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     width: '90%',
-    maxHeight: '70%',
+    height: '70%',
+    maxHeight: 500,
   },
 });

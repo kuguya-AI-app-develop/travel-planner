@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Colors, Typography, Spacing } from '../../src/theme';
 import { ListItem } from '../../src/components/ListItem';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { useRouter } from 'expo-router';
 
 export default function AIScreen() {
@@ -29,10 +30,10 @@ export default function AIScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>AI 助手</Text>
-          <Text style={styles.subtitle}>智能旅行策划与设置</Text>
-        </View>
+        <ScreenHeader
+          title="AI 助手"
+          subtitle="智能旅行策划与设置"
+        />
 
         <View style={styles.listContainer}>
           {aiTools.map((tool, index) => (

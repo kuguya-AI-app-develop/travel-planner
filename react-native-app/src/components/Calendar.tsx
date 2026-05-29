@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 import { Trip } from '../store/types';
 
 interface CalendarProps {
   trips: Trip[];
   onDateSelect?: (date: string) => void;
+  onAddTrip?: () => void;
+  onEditTrip?: (tripId: number) => void;
+  onDeleteTrip?: (tripId: number) => void;
 }
 
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 const MONTH_NAMES = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
-export function Calendar({ trips, onDateSelect }: CalendarProps) {
+export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteTrip }: CalendarProps) {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -81,6 +85,18 @@ export function Calendar({ trips, onDateSelect }: CalendarProps) {
               <Text style={styles.tripLabelText} numberOfLines={1}>
                 {trip.name}
               </Text>
+              <View style={styles.tripActions}>
+                {onEditTrip && (
+                  <TouchableOpacity onPress={() => onEditTrip(trip.id)}>
+                    <Ionicons name="create-outline" size={10} color="#FFF" />
+                  </TouchableOpacity>
+                )}
+                {onDeleteTrip && (
+                  <TouchableOpacity onPress={() => onDeleteTrip(trip.id)}>
+                    <Ionicons name="close" size={10} color="#FFF" />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           )}
         </TouchableOpacity>
@@ -113,6 +129,14 @@ export function Calendar({ trips, onDateSelect }: CalendarProps) {
         <Text style={styles.monthLabel}>
           {currentYear}年{MONTH_NAMES[currentMonth]}
         </Text>
+        {onAddTrip && (
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={onAddTrip}
+          >
+            <Ionicons name="add" size={20} color={Colors.accent} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.navButton}
           onPress={() => navigateMonth(1)}
@@ -234,11 +258,28 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 3,
     overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   tripLabelText: {
     fontSize: 8,
     fontWeight: Typography.semibold,
     color: '#FFFFFF',
     textAlign: 'center',
+    flex: 1,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tripActions: {
+    flexDirection: 'row',
+    gap: 4,
+    marginLeft: 4,
   },
 });

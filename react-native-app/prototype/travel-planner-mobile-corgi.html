@@ -64,6 +64,7 @@ body{
              radial-gradient(circle at 70% 80%,oklch(60% 0.16 300 / 5%),transparent 50%);
   pointer-events:none;
 }
+
 .showcase-title{
   position:absolute;top:28px;left:50%;transform:translateX(-50%);
   font-family:var(--font-display);font-size:13px;font-weight:600;
@@ -109,13 +110,23 @@ body{
   padding:0 0 8px;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
+  position:relative;
 }
 .screen::-webkit-scrollbar{display:none}
 .screen.active{display:flex;flex-direction:column}
 
+/* ─── Psyduck decoration ─── */
+.screen-psyduck{
+  position:absolute;  right:-42px;top:50%;transform:translateY(-50%);
+  width:192px;height:192px;object-fit:contain;z-index:3;
+  pointer-events:none;opacity:0.85;
+  filter:drop-shadow(0 2px 6px oklch(0% 0 0 / 12%));
+}
+
 /* ─── Screen Headers ─── */
 .screen-header{
-  padding:8px 20px 16px;flex-shrink:0;
+  padding:8px 20px 16px 20px;flex-shrink:0;
+  position:relative;z-index:2;
 }
 .screen-header h1{
   font-family:var(--font-display);font-size:28px;font-weight:800;
@@ -247,17 +258,18 @@ body{
   border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;
   box-shadow:0 1px 3px oklch(0% 0 0 / 4%);
 }
-.summary-card::after{
-  content:'';position:absolute;top:-16px;right:-16px;width:48px;height:48px;
-  border-radius:50%;opacity:.08;
+.summary-card::after{display:none}
+.summary-card .card-deco{
+  position:absolute;top:8px;right:8px;width:32px;height:32px;
+  opacity:.25;pointer-events:none;
 }
 .summary-card-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
 .summary-card-value{font-family:var(--font-display);font-size:24px;font-weight:800;letter-spacing:-0.03em}
 .summary-card-note{font-size:10px;color:var(--muted-light);margin-top:4px}
-.summary-card-accent::after{background:var(--accent)}
-.summary-card-success::after{background:var(--success)}
-.summary-card-warn::after{background:var(--warn)}
-.summary-card-coral::after{background:var(--coral)}
+.summary-card-accent .card-deco{opacity:.3}
+.summary-card-success .card-deco{opacity:.3}
+.summary-card-warn .card-deco{opacity:.25}
+.summary-card-coral .card-deco{opacity:.25}
 
 /* ─── Calendar ─── */
 .cal-month-nav{
@@ -511,18 +523,139 @@ body{
 .ai-plan-result h4:first-child{margin-top:0}
 .ai-plan-result ul{margin:4px 0;padding-inline-start:16px}
 .ai-plan-result li{margin-bottom:3px}
-.ai-plan-loading{
+/* ─── AI Loading Screen ─── */
+.ai-loading-screen{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:36px 16px;
+  min-height:100%;padding:40px 24px;text-align:center;position:relative;overflow:hidden;
 }
-.ai-spinner{
-  width:32px;height:32px;border:3px solid var(--border);
-  border-top-color:var(--accent);border-radius:50%;
-  animation:spin .8s linear infinite;
+.ai-loading-glow{
+  position:absolute;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-60%);opacity:.4;
+  animation:ai-glow-pulse 2s ease-in-out infinite;
 }
-@keyframes spin{to{transform:rotate(360deg)}}
-.ai-plan-loading p{font-size:13px;font-weight:600;margin-top:12px;color:var(--fg)}
-.ai-plan-loading span{font-size:11px;color:var(--muted);margin-top:4px}
+@keyframes ai-glow-pulse{0%,100%{opacity:.3;transform:translate(-50%,-60%) scale(1)}50%{opacity:.5;transform:translate(-50%,-60%) scale(1.1)}}
+.ai-loading-orbit{
+  position:relative;width:120px;height:120px;margin-bottom:32px;
+}
+.ai-loading-orbit .orbit-ring{
+  position:absolute;inset:0;border:2px solid var(--border);border-radius:50%;
+  animation:orbit-spin 3s linear infinite;
+}
+.ai-loading-orbit .orbit-ring:nth-child(2){inset:12px;animation-duration:2.5s;animation-direction:reverse;border-color:oklch(70% 0.08 290 / .3)}
+.ai-loading-orbit .orbit-ring:nth-child(3){inset:24px;animation-duration:2s;border-color:oklch(70% 0.12 350 / .3)}
+.ai-loading-orbit .orbit-dot{
+  position:absolute;width:8px;height:8px;border-radius:50%;top:-4px;left:50%;transform:translateX(-50%);
+}
+.ai-loading-orbit .orbit-ring:nth-child(1) .orbit-dot{background:var(--accent)}
+.ai-loading-orbit .orbit-ring:nth-child(2) .orbit-dot{background:oklch(65% 0.18 290)}
+.ai-loading-orbit .orbit-ring:nth-child(3) .orbit-dot{background:oklch(65% 0.18 350)}
+@keyframes orbit-spin{to{transform:rotate(360deg)}}
+.ai-loading-paw{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:48px;height:48px;opacity:.8;
+  animation:paw-bounce 1.5s ease-in-out infinite;
+}
+@keyframes paw-bounce{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.15)}}
+.ai-loading-title{
+  font-size:18px;font-weight:700;color:var(--fg);margin-bottom:8px;
+  font-family:var(--font-display);
+}
+.ai-loading-subtitle{
+  font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.5;
+}
+.ai-loading-progress{
+  width:200px;height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:16px;
+}
+.ai-loading-progress-bar{
+  height:100%;background:linear-gradient(90deg,var(--accent),oklch(65% 0.18 290));
+  border-radius:4px;width:0%;transition:width .3s ease;
+}
+.ai-loading-steps{
+  display:flex;flex-direction:column;gap:10px;width:220px;text-align:left;
+}
+.ai-loading-step{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);
+  transition:color .3s;
+}
+.ai-loading-step.active{color:var(--fg);font-weight:600}
+.ai-loading-step.done{color:var(--success)}
+.ai-loading-step .step-icon{
+  width:18px;height:18px;border-radius:50%;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;
+  transition:all .3s;
+}
+.ai-loading-step.active .step-icon{border-color:var(--accent);background:var(--accent);color:#fff}
+.ai-loading-step.done .step-icon{border-color:var(--success);background:var(--success);color:#fff}
+.ai-loading-cancel{
+  margin-top:28px;padding:8px 20px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer;
+}
+
+/* ─── AI Result Screen ─── */
+.ai-result-screen{display:flex;flex-direction:column;height:100%}
+.ai-result-header{
+  padding:16px 20px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ai-result-header .back-btn{font-size:24px;background:none;border:none;color:var(--fg);cursor:pointer;padding:0 4px}
+.ai-result-header h2{font-size:16px;font-weight:700;flex:1;font-family:var(--font-display)}
+.ai-result-badge{
+  font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;
+  background:oklch(92% 0.06 150);color:var(--success);
+}
+.ai-result-body{
+  flex:1;overflow-y:auto;padding:16px 20px;
+}
+.ai-result-summary{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;
+}
+.ai-result-stat{
+  text-align:center;padding:12px 8px;background:var(--surface-card);
+  border:1px solid var(--border);border-radius:var(--radius);
+}
+.ai-result-stat .stat-val{font-size:20px;font-weight:700;color:var(--accent);font-family:var(--font-display)}
+.ai-result-stat .stat-label{font-size:10px;color:var(--muted);margin-top:2px}
+.ai-result-section{margin-bottom:18px}
+.ai-result-section h3{
+  font-size:14px;font-weight:700;color:var(--fg);margin-bottom:10px;
+  padding-bottom:6px;border-bottom:1px solid var(--border-light);
+  font-family:var(--font-display);
+}
+.ai-result-day{margin-bottom:14px}
+.ai-result-day-title{
+  font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;
+}
+.ai-result-day-title .day-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;
+}
+.ai-result-item{
+  display:flex;align-items:flex-start;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--border-light);font-size:13px;
+}
+.ai-result-item:last-child{border-bottom:none}
+.ai-result-item .item-time{
+  font-size:11px;color:var(--muted);font-weight:600;min-width:40px;
+  font-variant-numeric:tabular-nums;
+}
+.ai-result-item .item-content{flex:1;line-height:1.5}
+.ai-result-item .item-place{
+  font-size:11px;color:var(--accent);display:flex;align-items:center;gap:3px;margin-top:2px;
+}
+.ai-result-tips{
+  background:oklch(92% 0.04 75 / .5);border:1px solid oklch(85% 0.06 75);
+  border-radius:var(--radius);padding:12px 14px;font-size:12px;line-height:1.6;
+  color:var(--fg);
+}
+.ai-result-tips h4{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--warn)}
+.ai-result-actions{
+  padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-shrink:0;
+  background:var(--surface);
+}
+.ai-result-actions .btn{flex:1}
 
 /* ─── Checklist ─── */
 .checklist{
@@ -661,6 +794,18 @@ body{
 .chat-send:active{transform:scale(.9)}
 .chat-send svg{width:14px;height:14px}
 
+/* ─── Card Actions ─── */
+.card-actions{display:flex;gap:4px;margin-left:auto}
+.card-action-btn{
+  width:28px;height:28px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:12px;flex-shrink:0;
+}
+.card-action-btn:active{background:var(--surface-raised)}
+.card-action-btn.delete:active{background:oklch(92% 0.04 25);color:var(--danger);border-color:var(--danger)}
+.card-action-btn svg{width:14px;height:14px}
+
 /* ─── Modal ─── */
 .modal-overlay{
   position:absolute;inset:0;background:oklch(0% 0 0 / 30%);
@@ -709,7 +854,7 @@ body{
 /* ─── Plan Switcher ─── */
 .plan-switcher{
   margin:0 16px 10px;background:var(--surface-card);border:1px solid var(--border);
-  border-radius:var(--radius-lg);overflow:hidden;
+  border-radius:var(--radius-lg);
   box-shadow:0 1px 3px oklch(0% 0 0 / 4%);
 }
 .plan-switcher-header{
@@ -717,7 +862,8 @@ body{
   cursor:pointer;
 }
 .plan-switcher-header .plan-current{flex:1;font-size:14px;font-weight:700;color:var(--accent)}
-.plan-switcher-header .plan-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.plan-switcher-header .plan-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;transition:transform .12s;cursor:pointer}
+.plan-switcher-header .plan-status:active{transform:scale(0.9)}
 .plan-switcher-header .plan-arrow{font-size:10px;color:var(--muted);transition:transform .2s}
 .plan-switcher-header .plan-arrow.open{transform:rotate(180deg)}
 .plan-dropdown{
@@ -734,6 +880,13 @@ body{
 .plan-dropdown-item.active{background:oklch(90% 0.06 80)}
 .plan-dropdown-item .plan-item-name{flex:1;font-size:13px;font-weight:500}
 .plan-dropdown-item .plan-item-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.plan-item-actions{display:flex;gap:4px;margin-left:6px}
+.plan-item-actions button{
+  width:26px;height:26px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;font-size:12px;
+  display:flex;align-items:center;justify-content:center;transition:all .12s;
+}
+.plan-item-actions button:active{background:var(--surface-raised);color:var(--accent)}
 
 /* ─── Add buttons ─── */
 .add-btn{
@@ -780,6 +933,7 @@ input[type="checkbox"]{
       <div class="screen active" id="screen-home">
         <div class="screen-header">
           <h1>旅行策划</h1>
+          <img class="screen-psyduck" src="mpnxy5m7-psyduck.png" alt="">
           <p>管理你的旅行计划</p>
         </div>
         <div class="plan-switcher" id="plan-switcher"></div>
@@ -803,58 +957,15 @@ input[type="checkbox"]{
           <button class="cal-nav-btn" onclick="calNav(1)">›</button>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
-        <div style="padding:12px 16px 4px">
-          <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">时间轴</div>
+        <div style="padding:12px 16px 4px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase">时间轴</div>
+          <button class="btn-sm" onclick="addTrip()">+ 添加行程</button>
         </div>
         <div class="timeline-list" id="timeline-list"></div>
         <div style="height:8px"></div>
       </div>
 
-      <!-- ═══ Screen: Tools (Feature List) ═══ -->
-      <div class="screen" id="screen-tools">
-        <div class="screen-header">
-          <h1>工具箱</h1>
-          <p>旅行规划全部功能</p>
-        </div>
-        <div class="card" style="padding:0">
-          <div class="list-item" onclick="openSubScreen('flights')">
-            <div class="list-icon" style="background:oklch(92% 0.04 185)"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="10" rx="2" stroke="var(--teal)" stroke-width="1.2"/><path d="M2 8h16" stroke="var(--teal)" stroke-width="1" stroke-dasharray="2 2"/><path d="M13 5v10M16 7v6M10 7v6" stroke="var(--teal)" stroke-width="1.2" stroke-linecap="round"/></svg></div>
-            <div class="list-content"><div class="list-title">机票对比</div><div class="list-desc">对比航班价格与服务</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('destinations')">
-            <div class="list-icon" style="background:oklch(92% 0.04 35)"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="8" r="3.5" stroke="var(--coral)" stroke-width="1.3"/><path d="M10 11.5L6.5 17h7L10 11.5z" stroke="var(--coral)" stroke-width="1.2" stroke-linejoin="round"/></svg></div>
-            <div class="list-content"><div class="list-title">目的地选择</div><div class="list-desc">评估各目的地综合评分</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('hotels')">
-            <div class="list-icon" style="background:oklch(92% 0.04 300)"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="8" width="14" height="9" rx="2.5" stroke="var(--purple)" stroke-width="1.3"/><path d="M7 8V6.5a3 3 0 016 0V8" stroke="var(--purple)" stroke-width="1.3"/></svg></div>
-            <div class="list-content"><div class="list-title">酒店评分</div><div class="list-desc">对比酒店价格与服务</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('expenses')">
-            <div class="list-icon" style="background:oklch(92% 0.04 75)"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="12" rx="2" stroke="var(--warn)" stroke-width="1.2"/><text x="10" y="12.5" text-anchor="middle" font-size="7" font-weight="700" fill="var(--warn)" opacity=".7">¥</text></svg></div>
-            <div class="list-content"><div class="list-title">其他消费</div><div class="list-desc">记录门票、餐饮等消费</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('itinerary')">
-            <div class="list-icon" style="background:oklch(90% 0.06 80)"><svg viewBox="0 0 20 20" fill="none"><path d="M4 4h12M4 8h8M4 12h10M4 16h6" stroke="var(--accent)" stroke-width="1.3" stroke-linecap="round"/></svg></div>
-            <div class="list-content"><div class="list-title">每日行程</div><div class="list-desc">规划每天的具体安排</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('packing')">
-            <div class="list-icon" style="background:oklch(92% 0.04 150)"><svg viewBox="0 0 20 20" fill="none"><rect x="4" y="6" width="12" height="11" rx="2" stroke="var(--success)" stroke-width="1.2"/><path d="M7 6V4.5a3 3 0 016 0V6" stroke="var(--success)" stroke-width="1.2"/><path d="M7 10l2 2 4-4" stroke="var(--success)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-            <div class="list-content"><div class="list-title">行李清单</div><div class="list-desc">逐项检查已打包物品</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-          <div class="list-item" onclick="openSubScreen('documents')">
-            <div class="list-icon" style="background:oklch(92% 0.04 185)"><svg viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="var(--teal)" stroke-width="1.2"/><path d="M7 6h6M7 9h6M7 12h4" stroke="var(--teal)" stroke-width="1" stroke-linecap="round" opacity=".5"/></svg></div>
-            <div class="list-content"><div class="list-title">证件管理</div><div class="list-desc">护照、签证、保险有效期</div></div>
-            <div class="list-arrow">›</div>
-          </div>
-        </div>
-        <div style="height:16px"></div>
-      </div>
+
 
       <!-- ═══ Screen: AI ═══ -->
       <div class="screen" id="screen-ai">
@@ -954,6 +1065,7 @@ input[type="checkbox"]{
         </div>
         <p style="padding:0 20px 12px;font-size:12px;color:var(--muted)">点击日期展开，规划具体安排</p>
         <div id="itinerary-days"></div>
+        <button class="add-btn" onclick="addItinerary()">+ 添加行程</button>
         <div style="height:8px"></div>
       </div>
 
@@ -966,6 +1078,7 @@ input[type="checkbox"]{
         <p style="padding:0 20px 12px;font-size:12px;color:var(--muted)">出发前逐项检查</p>
         <div class="packing-progress" id="packing-progress"></div>
         <div id="packing-categories"></div>
+        <button class="add-btn" onclick="addPack()">+ 添加物品</button>
         <div style="height:8px"></div>
       </div>
 
@@ -1042,23 +1155,6 @@ input[type="checkbox"]{
             </div>
           </div>
         </div>
-        <div class="ai-plan-card" id="ai-plan-loading" style="display:none">
-          <div class="ai-plan-loading">
-            <div class="ai-spinner"></div>
-            <p>AI 正在为你策划旅行…</p>
-            <span>通常需要 10-30 秒</span>
-          </div>
-        </div>
-        <div class="ai-plan-card" id="ai-plan-result" style="display:none">
-          <div class="ai-plan-header">
-            <h3>AI 生成结果</h3>
-            <div style="display:flex;gap:6px">
-              <button class="btn-sm" onclick="applyAIPlan()">应用</button>
-              <button class="btn-sm" onclick="copyAIPlan()">复制</button>
-            </div>
-          </div>
-          <div class="ai-plan-result" id="ai-plan-result-content"></div>
-        </div>
         <div style="height:16px"></div>
       </div>
 
@@ -1105,6 +1201,64 @@ input[type="checkbox"]{
         </div>
         <div style="height:16px"></div>
       </div>
+
+      <!-- ═══ Sub-Screen: AI Plan Loading ═══ -->
+      <div class="screen" id="screen-ai-plan-loading">
+        <div class="ai-loading-screen">
+          <div class="ai-loading-glow"></div>
+          <div class="ai-loading-orbit">
+            <div class="orbit-ring"><div class="orbit-dot"></div></div>
+            <div class="orbit-ring"><div class="orbit-dot"></div></div>
+            <div class="orbit-ring"><div class="orbit-dot"></div></div>
+            <img class="ai-loading-paw" src="mpoxzxjm-paws.png" alt="">
+          </div>
+          <div class="ai-loading-title">AI 正在为你策划旅行</div>
+          <div class="ai-loading-subtitle">分析目的地信息，生成最优行程方案…</div>
+          <div class="ai-loading-progress">
+            <div class="ai-loading-progress-bar" id="ai-progress-bar"></div>
+          </div>
+          <div class="ai-loading-steps">
+            <div class="ai-loading-step active" id="ai-step-1">
+              <span class="step-icon">1</span>
+              <span>分析目的地与出行偏好</span>
+            </div>
+            <div class="ai-loading-step" id="ai-step-2">
+              <span class="step-icon">2</span>
+              <span>规划每日行程路线</span>
+            </div>
+            <div class="ai-loading-step" id="ai-step-3">
+              <span class="step-icon">3</span>
+              <span>匹配酒店与交通方案</span>
+            </div>
+            <div class="ai-loading-step" id="ai-step-4">
+              <span class="step-icon">4</span>
+              <span>生成预算与旅行贴士</span>
+            </div>
+          </div>
+          <button class="ai-loading-cancel" onclick="cancelAIGeneration()">取消生成</button>
+        </div>
+      </div>
+
+      <!-- ═══ Sub-Screen: AI Plan Result ═══ -->
+      <div class="screen" id="screen-ai-plan-result">
+        <div class="ai-result-screen">
+          <div class="ai-result-header">
+            <button class="back-btn" onclick="closeSubScreen()">‹</button>
+            <h2>AI 旅行方案</h2>
+            <span class="ai-result-badge">✓ 已生成</span>
+          </div>
+          <div class="ai-result-body" id="ai-result-body">
+            <!-- Dynamic content injected by JS -->
+          </div>
+          <div class="ai-result-actions">
+            <button class="btn btn-primary" onclick="applyAIPlan()">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-right:6px"><path d="M3 8.5l3.5 3.5L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              应用到当前计划
+            </button>
+            <button class="btn btn-ghost" onclick="copyAIPlan()">复制方案</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ Tab Bar ═══ -->
@@ -1117,10 +1271,7 @@ input[type="checkbox"]{
         <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2v5M16 2v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         <span>日历</span>
       </div>
-      <div class="tab-item" data-tab="tools" onclick="switchTab('tools')">
-        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>
-        <span>工具</span>
-      </div>
+
       <div class="tab-item" data-tab="ai" onclick="switchTab('ai')">
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7l8 5 8-5-8-5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 12l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17l8 5 8-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>AI</span>
@@ -1355,7 +1506,7 @@ function renderPlanSwitcher() {
     <div class="plan-switcher-header" onclick="togglePlanDropdown()">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="2" stroke="var(--accent)" stroke-width="1.2"/><path d="M5 3V1.5M11 3V1.5M2 6.5h12" stroke="var(--accent)" stroke-width="1.1" stroke-linecap="round"/></svg>
       <span class="plan-current">${plan.name}</span>
-      <span class="plan-status ${st.cls}">${st.label}</span>
+      <span class="plan-status ${st.cls}" onclick="event.stopPropagation();cyclePlanStatus()" style="cursor:pointer" title="点击切换状态">${st.label}</span>
       <span class="plan-arrow" id="plan-arrow">▾</span>
     </div>
     <div class="plan-dropdown" id="plan-dropdown">
@@ -1364,6 +1515,14 @@ function renderPlanSwitcher() {
         return `<div class="plan-dropdown-item ${p.id === activePlanId ? 'active' : ''}" onclick="selectPlan('${p.id}')">
           <span class="plan-item-name">${p.name}</span>
           <span class="plan-item-status ${s.cls}">${s.label}</span>
+          <div class="plan-item-actions">
+            <button onclick="event.stopPropagation();editPlan('${p.id}')" title="编辑">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            </button>
+            <button onclick="event.stopPropagation();deletePlan('${p.id}')" title="删除">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
         </div>`;
       }).join('')}
       <div class="plan-dropdown-item" onclick="createPlan()" style="color:var(--accent);font-size:12px">
@@ -1378,6 +1537,16 @@ function togglePlanDropdown() {
   const arrow = document.getElementById('plan-arrow');
   dd.classList.toggle('show');
   arrow.classList.toggle('open');
+}
+
+function cyclePlanStatus() {
+  const plan = getPlan();
+  const keys = Object.keys(PLAN_STATUSES);
+  const idx = keys.indexOf(plan.status);
+  plan.status = keys[(idx + 1) % keys.length];
+  savePlans();
+  renderHome();
+  showToast('状态已变更为：' + PLAN_STATUSES[plan.status].label);
 }
 
 function selectPlan(id) {
@@ -1397,6 +1566,31 @@ function createPlan() {
   showToast('已创建新计划');
 }
 
+function editPlan(id) {
+  const p = plans[id];
+  if (!p) return;
+  openModal('编辑计划', [
+    { label: '计划名称', id: 'ep-name', value: p.name },
+    { label: '状态', id: 'ep-status', value: p.status, type: 'select', options: STATUS_ORDER.map(s => ({ value: s, label: PLAN_STATUSES[s].label })) },
+  ], () => {
+    p.name = document.getElementById('ep-name').value || p.name;
+    p.status = document.getElementById('ep-status').value;
+    renderPlanSwitcher();
+    renderHomeSummary();
+    showToast('计划已更新');
+  });
+}
+
+function deletePlan(id) {
+  const ids = Object.keys(plans);
+  if (ids.length <= 1) { showToast('至少保留一个计划'); return; }
+  if (!confirm('确定删除「' + plans[id].name + '」？')) return;
+  delete plans[id];
+  if (activePlanId === id) activePlanId = Object.keys(plans)[0];
+  renderHome();
+  showToast('计划已删除');
+}
+
 function renderHomeSummary() {
   const selectedFlights = flights.filter(f => f.selected);
   const flightTotal = selectedFlights.reduce((s, f) => s + f.price, 0);
@@ -1408,11 +1602,13 @@ function renderHomeSummary() {
 
   document.getElementById('home-summary').innerHTML = `
     <div class="summary-card summary-card-accent">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">总预算</div>
       <div class="summary-card-value">¥${total.toLocaleString()}</div>
       <div class="summary-card-note">机票+酒店+消费</div>
     </div>
     <div class="summary-card summary-card-success">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">待办完成</div>
       <div class="summary-card-value">${checklistItems.filter(i=>i.done).length}/${checklistItems.length}</div>
       <div class="summary-card-note">${Math.round(checklistItems.filter(i=>i.done).length/checklistItems.length*100)}% 已完成</div>
@@ -1511,6 +1707,10 @@ function renderCalendar() {
         <div class="timeline-name">${t.name}</div>
         <div class="timeline-dates">${t.start} → ${t.end}</div>
       </div>
+      <div class="card-actions" style="margin-left:4px">
+        <button class="card-action-btn" onclick="editTrip(${t.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+        <button class="card-action-btn delete" onclick="deleteTrip(${t.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>`).join('');
 }
 
@@ -1526,6 +1726,62 @@ function calNav(dir) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderCalendar();
+}
+
+const TRIP_COLORS = [
+  'oklch(72% 0.18 80)', 'oklch(52% 0.16 150)', 'oklch(62% 0.16 55)',
+  'oklch(55% 0.20 300)', 'oklch(58% 0.18 35)', 'oklch(50% 0.14 250)',
+];
+let tripIdCounter = 10;
+
+function addTrip() {
+  const plan = getPlan();
+  const todayStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  openModal('添加行程', [
+    { label: '行程名称', id: 'trip-name', value: '' },
+    { label: '开始日期', id: 'trip-start', value: todayStr, type: 'date' },
+    { label: '结束日期', id: 'trip-end', value: todayStr, type: 'date' },
+    { label: '颜色', id: 'trip-color', value: TRIP_COLORS[plan.trips.length % TRIP_COLORS.length], type: 'select', options: TRIP_COLORS.map((c, i) => ({ value: c, label: '颜色 ' + (i + 1) })) },
+  ], () => {
+    const name = document.getElementById('trip-name').value;
+    if (!name) { showToast('请输入行程名称'); return; }
+    plan.trips.push({
+      id: ++tripIdCounter,
+      name,
+      start: document.getElementById('trip-start').value,
+      end: document.getElementById('trip-end').value,
+      color: document.getElementById('trip-color').value,
+    });
+    renderCalendar();
+    showToast('行程已添加');
+  });
+}
+
+function editTrip(id) {
+  const plan = getPlan();
+  const t = plan.trips.find(t => t.id === id);
+  if (!t) return;
+  openModal('编辑行程', [
+    { label: '行程名称', id: 'et-name', value: t.name },
+    { label: '开始日期', id: 'et-start', value: t.start, type: 'date' },
+    { label: '结束日期', id: 'et-end', value: t.end, type: 'date' },
+    { label: '颜色', id: 'et-color', value: t.color, type: 'select', options: TRIP_COLORS.map((c, i) => ({ value: c, label: '颜色 ' + (i + 1) })) },
+  ], () => {
+    t.name = document.getElementById('et-name').value || t.name;
+    t.start = document.getElementById('et-start').value;
+    t.end = document.getElementById('et-end').value;
+    t.color = document.getElementById('et-color').value;
+    renderCalendar();
+    showToast('行程已更新');
+  });
+}
+
+function deleteTrip(id) {
+  const plan = getPlan();
+  if (!confirm('确定删除此行程？')) return;
+  plan.trips = plan.trips.filter(t => t.id !== id);
+  renderCalendar();
+  showToast('行程已删除');
 }
 
 // ─── Flights ───
@@ -1547,6 +1803,10 @@ function renderFlights() {
           <div class="flight-price">¥${f.price.toLocaleString()}</div>
           ${statusPill(f.status)}
         </div>
+        <div class="card-actions">
+          <button class="card-action-btn" onclick="editFlight(${f.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+          <button class="card-action-btn delete" onclick="deleteFlight(${f.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
       </div>
       <div class="flight-criteria">
         ${flightCriteria.map((c, i) => `<span>${c}: ${f.notes[i] || '—'}</span>`).join('')}
@@ -1567,6 +1827,39 @@ function addFlight() {
   showToast('已添加航班');
 }
 
+function editFlight(id) {
+  const f = flights.find(f => f.id === id);
+  if (!f) return;
+  openModal('编辑航班', [
+    { label: '航空公司', id: 'e-airline', value: f.airline },
+    { label: '航班号', id: 'e-code', value: f.code },
+    { label: '航线', id: 'e-route', value: f.route },
+    { label: '出发时间', id: 'e-dep', value: f.dep },
+    { label: '到达时间', id: 'e-arr', value: f.arr },
+    { label: '价格 (¥)', id: 'e-price', value: f.price, type: 'number' },
+    { label: '舱位', id: 'e-cls', value: f.cls },
+    { label: '状态', id: 'e-status', value: f.status, type: 'select', options: [{ value: 'booked', label: '已订' }, { value: 'pending', label: '待定' }, { value: 'compare', label: '对比中' }] },
+  ], () => {
+    f.airline = document.getElementById('e-airline').value;
+    f.code = document.getElementById('e-code').value;
+    f.route = document.getElementById('e-route').value;
+    f.dep = document.getElementById('e-dep').value;
+    f.arr = document.getElementById('e-arr').value;
+    f.price = Number(document.getElementById('e-price').value) || 0;
+    f.cls = document.getElementById('e-cls').value;
+    f.status = document.getElementById('e-status').value;
+    renderFlights(); renderHomeSummary();
+    showToast('航班已更新');
+  });
+}
+
+function deleteFlight(id) {
+  if (!confirm('确定删除此航班？')) return;
+  flights = flights.filter(f => f.id !== id);
+  renderFlights(); renderHomeSummary();
+  showToast('航班已删除');
+}
+
 // ─── Destinations ───
 function renderDestinations() {
   document.getElementById('destinations-list').innerHTML = destinations.map(d => {
@@ -1575,9 +1868,13 @@ function renderDestinations() {
     <div class="dest-card">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <input type="checkbox" ${d.selected ? 'checked' : ''} onchange="toggleDest(${d.id})">
-        <div>
+        <div style="flex:1">
           <div class="dest-name">${d.name}</div>
           <div class="dest-country">${d.country}</div>
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn" onclick="editDest(${d.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+          <button class="card-action-btn delete" onclick="deleteDest(${d.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${d.notes}</div>
@@ -1608,6 +1905,29 @@ function addDestination() {
   showToast('已添加目的地');
 }
 
+function editDest(id) {
+  const d = destinations.find(d => d.id === id);
+  if (!d) return;
+  openModal('编辑目的地', [
+    { label: '名称', id: 'e-name', value: d.name },
+    { label: '国家', id: 'e-country', value: d.country },
+    { label: '备注', id: 'e-notes', value: d.notes },
+  ], () => {
+    d.name = document.getElementById('e-name').value;
+    d.country = document.getElementById('e-country').value;
+    d.notes = document.getElementById('e-notes').value;
+    renderDestinations();
+    showToast('目的地已更新');
+  });
+}
+
+function deleteDest(id) {
+  if (!confirm('确定删除此目的地？')) return;
+  destinations = destinations.filter(d => d.id !== id);
+  renderDestinations();
+  showToast('目的地已删除');
+}
+
 // ─── Hotels ───
 function renderHotels() {
   const statusPill = (s) => {
@@ -1628,6 +1948,10 @@ function renderHotels() {
         <div style="text-align:right">
           <div class="hotel-price">${h.price}</div>
           ${statusPill(h.status)}
+        </div>
+        <div class="card-actions">
+          <button class="card-action-btn" onclick="editHotel(${h.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+          <button class="card-action-btn delete" onclick="deleteHotel(${h.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:8px">
@@ -1665,6 +1989,32 @@ function addHotel() {
   showToast('已添加酒店');
 }
 
+function editHotel(id) {
+  const h = hotels.find(h => h.id === id);
+  if (!h) return;
+  openModal('编辑酒店', [
+    { label: '酒店名称', id: 'e-name', value: h.name },
+    { label: '位置', id: 'e-loc', value: h.location },
+    { label: '价格 (¥/晚)', id: 'e-price', value: h.priceNum, type: 'number' },
+    { label: '状态', id: 'e-status', value: h.status, type: 'select', options: [{ value: 'booked', label: '已订' }, { value: 'pending', label: '待定' }] },
+  ], () => {
+    h.name = document.getElementById('e-name').value;
+    h.location = document.getElementById('e-loc').value;
+    h.priceNum = Number(document.getElementById('e-price').value) || 0;
+    h.price = '¥' + h.priceNum + '/晚';
+    h.status = document.getElementById('e-status').value;
+    renderHotels(); renderHomeSummary();
+    showToast('酒店已更新');
+  });
+}
+
+function deleteHotel(id) {
+  if (!confirm('确定删除此酒店？')) return;
+  hotels = hotels.filter(h => h.id !== id);
+  renderHotels(); renderHomeSummary();
+  showToast('酒店已删除');
+}
+
 // ─── Expenses ───
 function renderExpenses() {
   document.getElementById('expenses-list').innerHTML = expenses.map(e => `
@@ -1675,6 +2025,10 @@ function renderExpenses() {
         <div class="expense-cat">${e.category}${e.note ? ' · ' + e.note : ''}</div>
       </div>
       <div class="expense-amount">¥${e.amount.toLocaleString()}</div>
+      <div class="card-actions">
+        <button class="card-action-btn" onclick="editExpense(${e.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+        <button class="card-action-btn delete" onclick="deleteExpense(${e.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>`).join('');
 }
 
@@ -1689,6 +2043,31 @@ function addExpense() {
   expenses.push({ id: nextId.expense++, name: '新消费', category: '其他', amount: 0, note: '', selected: false, status: 'pending', actual: 0 });
   renderExpenses();
   showToast('已添加消费');
+}
+
+function editExpense(id) {
+  const e = expenses.find(e => e.id === id);
+  if (!e) return;
+  openModal('编辑消费', [
+    { label: '名称', id: 'e-name', value: e.name },
+    { label: '类别', id: 'e-cat', value: e.category, type: 'select', options: EXPENSE_CATEGORIES.map(c => ({ value: c, label: c })) },
+    { label: '金额 (¥)', id: 'e-amount', value: e.amount, type: 'number' },
+    { label: '备注', id: 'e-note', value: e.note },
+  ], () => {
+    e.name = document.getElementById('e-name').value;
+    e.category = document.getElementById('e-cat').value;
+    e.amount = Number(document.getElementById('e-amount').value) || 0;
+    e.note = document.getElementById('e-note').value;
+    renderExpenses(); renderHomeSummary();
+    showToast('消费已更新');
+  });
+}
+
+function deleteExpense(id) {
+  if (!confirm('确定删除此消费记录？')) return;
+  expenses = expenses.filter(e => e.id !== id);
+  renderExpenses(); renderHomeSummary();
+  showToast('消费已删除');
 }
 
 // ─── Itinerary ───
@@ -1725,6 +2104,10 @@ function renderItinerary() {
                   ${item.notes ? `<span>${item.notes}</span>` : ''}
                 </div>
               </div>
+              <div class="card-actions" style="flex-shrink:0">
+                <button class="card-action-btn" onclick="editItinerary(${item.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+                <button class="card-action-btn delete" onclick="deleteItinerary(${item.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
             </div>`).join('')}
         </div>
       </div>`}).join('');
@@ -1740,6 +2123,65 @@ function toggleDay(header) {
   const toggle = header.querySelector('.day-toggle');
   body.classList.toggle('collapsed');
   toggle.classList.toggle('open');
+}
+
+function addItinerary() {
+  openModal('添加行程', [
+    { label: '日期', id: 'e-date', value: '2026-05-18', type: 'date' },
+    { label: '时间', id: 'e-time', value: '09:00' },
+    { label: '标题', id: 'e-title', value: '' },
+    { label: '地点', id: 'e-location', value: '' },
+    { label: '类型', id: 'e-type', value: 'sight', type: 'select', options: [{ value: 'sight', label: '景点' }, { value: 'food', label: '餐饮' }, { value: 'transport', label: '交通' }, { value: 'hotel', label: '住宿' }, { value: 'other', label: '其他' }] },
+    { label: '时长 (分钟)', id: 'e-duration', value: 60, type: 'number' },
+    { label: '备注', id: 'e-notes', value: '' },
+  ], () => {
+    const plan = getPlan();
+    plan.itineraryItems.push({
+      id: Date.now(),
+      date: document.getElementById('e-date').value,
+      time: document.getElementById('e-time').value,
+      title: document.getElementById('e-title').value || '新行程',
+      location: document.getElementById('e-location').value,
+      type: document.getElementById('e-type').value,
+      duration: Number(document.getElementById('e-duration').value) || 60,
+      notes: document.getElementById('e-notes').value,
+    });
+    renderItinerary();
+    showToast('行程已添加');
+  });
+}
+
+function editItinerary(id) {
+  const plan = getPlan();
+  const item = plan.itineraryItems.find(i => i.id === id);
+  if (!item) return;
+  openModal('编辑行程', [
+    { label: '日期', id: 'e-date', value: item.date, type: 'date' },
+    { label: '时间', id: 'e-time', value: item.time },
+    { label: '标题', id: 'e-title', value: item.title },
+    { label: '地点', id: 'e-location', value: item.location },
+    { label: '类型', id: 'e-type', value: item.type, type: 'select', options: [{ value: 'sight', label: '景点' }, { value: 'food', label: '餐饮' }, { value: 'transport', label: '交通' }, { value: 'hotel', label: '住宿' }, { value: 'other', label: '其他' }] },
+    { label: '时长 (分钟)', id: 'e-duration', value: item.duration, type: 'number' },
+    { label: '备注', id: 'e-notes', value: item.notes },
+  ], () => {
+    item.date = document.getElementById('e-date').value;
+    item.time = document.getElementById('e-time').value;
+    item.title = document.getElementById('e-title').value;
+    item.location = document.getElementById('e-location').value;
+    item.type = document.getElementById('e-type').value;
+    item.duration = Number(document.getElementById('e-duration').value) || 60;
+    item.notes = document.getElementById('e-notes').value;
+    renderItinerary();
+    showToast('行程已更新');
+  });
+}
+
+function deleteItinerary(id) {
+  if (!confirm('确定删除此行程？')) return;
+  const plan = getPlan();
+  plan.itineraryItems = plan.itineraryItems.filter(i => i.id !== id);
+  renderItinerary();
+  showToast('行程已删除');
 }
 
 // ─── Packing ───
@@ -1770,6 +2212,10 @@ function renderPacking() {
         <div class="packing-item ${item.packed ? 'done' : ''}">
           <input type="checkbox" class="packing-check" ${item.packed ? 'checked' : ''} onchange="togglePack(${item.id})">
           <span class="packing-text">${item.name}</span>
+          <div class="card-actions">
+            <button class="card-action-btn" onclick="editPack(${item.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+            <button class="card-action-btn delete" onclick="deletePack(${item.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
         </div>`).join('')}
     </div>`).join('');
 }
@@ -1779,6 +2225,46 @@ function togglePack(id) {
   const item = plan.packingItems.find(i => i.id === id);
   if (item) item.packed = !item.packed;
   renderPacking();
+}
+
+function addPack() {
+  const plan = getPlan();
+  openModal('添加物品', [
+    { label: '物品名称', id: 'e-name', value: '' },
+    { label: '分类', id: 'e-cat', value: '其他', type: 'select', options: [...new Set(plan.packingItems.map(i => i.category)), '其他'].map(c => ({ value: c, label: c })) },
+  ], () => {
+    plan.packingItems.push({
+      id: Date.now(),
+      name: document.getElementById('e-name').value || '新物品',
+      category: document.getElementById('e-cat').value,
+      packed: false,
+    });
+    renderPacking();
+    showToast('物品已添加');
+  });
+}
+
+function editPack(id) {
+  const plan = getPlan();
+  const item = plan.packingItems.find(i => i.id === id);
+  if (!item) return;
+  openModal('编辑物品', [
+    { label: '物品名称', id: 'e-name', value: item.name },
+    { label: '分类', id: 'e-cat', value: item.category, type: 'select', options: [...new Set(plan.packingItems.map(i => i.category))].map(c => ({ value: c, label: c })) },
+  ], () => {
+    item.name = document.getElementById('e-name').value;
+    item.category = document.getElementById('e-cat').value;
+    renderPacking();
+    showToast('物品已更新');
+  });
+}
+
+function deletePack(id) {
+  if (!confirm('确定删除此物品？')) return;
+  const plan = getPlan();
+  plan.packingItems = plan.packingItems.filter(i => i.id !== id);
+  renderPacking();
+  showToast('物品已删除');
 }
 
 // ─── Documents ───
@@ -1811,6 +2297,10 @@ function renderDocuments() {
           </div>
           <div class="doc-name">${doc.name}</div>
           <span class="doc-status ${st.cls}">${st.label}</span>
+          <div class="card-actions">
+            <button class="card-action-btn" onclick="editDocument(${doc.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+            <button class="card-action-btn delete" onclick="deleteDocument(${doc.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
         </div>
         ${doc.number ? `<div class="doc-row"><span class="doc-label">号码</span><span class="doc-value">${doc.number}</span></div>` : ''}
         ${doc.expiry ? `<div class="doc-row"><span class="doc-label">有效期</span><span class="doc-value">${doc.expiry}</span></div>` : ''}
@@ -1825,6 +2315,37 @@ function addDocument() {
   showToast('已添加证件');
 }
 
+function editDocument(id) {
+  const plan = getPlan();
+  const doc = plan.documents.find(d => d.id === id);
+  if (!doc) return;
+  openModal('编辑证件', [
+    { label: '名称', id: 'e-name', value: doc.name },
+    { label: '类型', id: 'e-type', value: doc.type, type: 'select', options: [{ value: 'passport', label: '护照' }, { value: 'visa', label: '签证' }, { value: 'insurance', label: '保险' }, { value: 'booking', label: '预订' }, { value: 'other', label: '其他' }] },
+    { label: '号码', id: 'e-number', value: doc.number },
+    { label: '有效期', id: 'e-expiry', value: doc.expiry, type: 'date' },
+    { label: '状态', id: 'e-status', value: doc.status, type: 'select', options: [{ value: 'valid', label: '有效' }, { value: 'expiring', label: '即将过期' }, { value: 'expired', label: '已过期' }, { value: 'processing', label: '办理中' }, { value: 'none', label: '未办理' }] },
+    { label: '备注', id: 'e-notes', value: doc.notes },
+  ], () => {
+    doc.name = document.getElementById('e-name').value;
+    doc.type = document.getElementById('e-type').value;
+    doc.number = document.getElementById('e-number').value;
+    doc.expiry = document.getElementById('e-expiry').value;
+    doc.status = document.getElementById('e-status').value;
+    doc.notes = document.getElementById('e-notes').value;
+    renderDocuments();
+    showToast('证件已更新');
+  });
+}
+
+function deleteDocument(id) {
+  if (!confirm('确定删除此证件？')) return;
+  const plan = getPlan();
+  plan.documents = plan.documents.filter(d => d.id !== id);
+  renderDocuments();
+  showToast('证件已删除');
+}
+
 // ─── Budget ───
 function renderBudget() {
   const selectedFlights = flights.filter(f => f.selected);
@@ -1837,20 +2358,24 @@ function renderBudget() {
 
   document.getElementById('budget-summary').innerHTML = `
     <div class="summary-card summary-card-accent">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">总费用</div>
       <div class="summary-card-value">¥${total.toLocaleString()}</div>
     </div>
     <div class="summary-card summary-card-success">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">机票</div>
       <div class="summary-card-value">¥${flightTotal.toLocaleString()}</div>
       <div class="summary-card-note">${selectedFlights.length} 个航班</div>
     </div>
     <div class="summary-card summary-card-warn">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">酒店</div>
       <div class="summary-card-value">¥${hotelTotal.toLocaleString()}</div>
       <div class="summary-card-note">${selectedHotels.length} 家酒店</div>
     </div>
     <div class="summary-card summary-card-coral">
+      <img class="card-deco" src="mpoxzxjm-paws.png" alt="">
       <div class="summary-card-label">其他消费</div>
       <div class="summary-card-value">¥${expenseTotal.toLocaleString()}</div>
       <div class="summary-card-note">${selectedExpenses.length} 项</div>
@@ -1873,6 +2398,10 @@ function renderChecklist() {
     <div class="checklist-item ${item.done ? 'done' : ''}">
       <input type="checkbox" class="checklist-check" ${item.done ? 'checked' : ''} onchange="toggleCheck(${item.id})">
       <span class="checklist-text">${item.text}</span>
+      <div class="card-actions">
+        <button class="card-action-btn" onclick="editCheckItem(${item.id})" title="编辑"><svg viewBox="0 0 16 16" fill="none"><path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+        <button class="card-action-btn delete" onclick="deleteCheckItem(${item.id})" title="删除"><svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4h9.34z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
     </div>`).join('');
 }
 
@@ -1884,12 +2413,35 @@ function toggleCheck(id) {
 }
 
 function addCheckItem() {
-  const text = prompt('输入待办事项：');
-  if (text) {
-    checklistItems.push({ id: nextId.check++, text, done: false });
+  openModal('添加待办', [
+    { label: '待办内容', id: 'e-text', value: '' },
+  ], () => {
+    const text = document.getElementById('e-text').value;
+    if (text) {
+      checklistItems.push({ id: nextId.check++, text, done: false });
+      renderChecklist(); renderHomeSummary();
+      showToast('待办已添加');
+    }
+  });
+}
+
+function editCheckItem(id) {
+  const item = checklistItems.find(i => i.id === id);
+  if (!item) return;
+  openModal('编辑待办', [
+    { label: '待办内容', id: 'e-text', value: item.text },
+  ], () => {
+    item.text = document.getElementById('e-text').value;
     renderChecklist();
-    renderHomeSummary();
-  }
+    showToast('待办已更新');
+  });
+}
+
+function deleteCheckItem(id) {
+  if (!confirm('确定删除此待办？')) return;
+  checklistItems = checklistItems.filter(i => i.id !== id);
+  renderChecklist(); renderHomeSummary();
+  showToast('待办已删除');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1935,34 +2487,114 @@ function testAIConnection() {
   }, 1500);
 }
 
+let aiGenerationTimer = null;
+
 function generateAIPlan() {
-  document.getElementById('ai-plan-loading').style.display = 'block';
-  document.getElementById('ai-plan-result').style.display = 'none';
-  setTimeout(() => {
-    document.getElementById('ai-plan-loading').style.display = 'none';
-    document.getElementById('ai-plan-result').style.display = 'block';
-    document.getElementById('ai-plan-result-content').innerHTML = `
-      <h4>Day 1 — 抵达与探索</h4>
-      <ul>
-        <li><strong>10:00</strong> 抵达成田机场，购买西瓜卡</li>
-        <li><strong>14:00</strong> 酒店入住（新宿区域）</li>
-        <li><strong>16:00</strong> 新宿逛街 — 歌舞伎町、百货商场</li>
-        <li><strong>19:00</strong> 晚餐：拉面激战区</li>
-      </ul>
-      <h4>Day 2 — 文化体验</h4>
-      <ul>
-        <li><strong>09:00</strong> 浅草寺 — 雷门拍照</li>
-        <li><strong>12:00</strong> 午餐：天妇罗</li>
-        <li><strong>14:00</strong> 秋叶原 — 电器街、动漫周边</li>
-        <li><strong>18:00</strong> 东京塔夜景</li>
-      </ul>
-      <h4>Day 3 — 迪士尼全天</h4>
-      <ul>
-        <li><strong>09:00</strong> 东京迪士尼乐园全天游玩</li>
-        <li><strong>21:00</strong> 烟花表演后返回酒店</li>
-      </ul>
-      <p style="margin-top:12px;color:var(--muted);font-size:12px">* 此为 AI 模拟生成结果，实际使用需配置真实 API Key</p>`;
-  }, 2000);
+  // Save form context
+  window._aiFormCtx = {
+    dest: document.getElementById('ai-dest').value || '东京',
+    days: parseInt(document.getElementById('ai-days').value) || 5,
+    startDate: document.getElementById('ai-start-date').value || '2026-06-15',
+    numPeople: parseInt(document.getElementById('ai-num-people').value) || 2,
+    budget: document.getElementById('ai-budget').value || '15000',
+    style: document.getElementById('ai-style').value,
+    special: document.getElementById('ai-special').value,
+  };
+  // Navigate to loading screen
+  openSubScreen('ai-plan-loading');
+  // Reset progress
+  const bar = document.getElementById('ai-progress-bar');
+  bar.style.width = '0%';
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('ai-step-' + i);
+    el.className = 'ai-loading-step' + (i === 1 ? ' active' : '');
+  }
+  // Animate progress
+  const steps = [
+    { pct: 25, step: 1, delay: 800 },
+    { pct: 50, step: 2, delay: 1600 },
+    { pct: 75, step: 3, delay: 2400 },
+    { pct: 100, step: 4, delay: 3200 },
+  ];
+  steps.forEach(s => {
+    setTimeout(() => {
+      bar.style.width = s.pct + '%';
+      for (let i = 1; i <= s.step; i++) {
+        const el = document.getElementById('ai-step-' + i);
+        el.className = i < s.step ? 'ai-loading-step done' : 'ai-loading-step active';
+        if (i < s.step) el.querySelector('.step-icon').textContent = '✓';
+      }
+    }, s.delay);
+  });
+  // After loading, show result
+  aiGenerationTimer = setTimeout(() => {
+    renderAIResult();
+    openSubScreen('ai-plan-result');
+    aiGenerationTimer = null;
+  }, 4000);
+}
+
+function cancelAIGeneration() {
+  if (aiGenerationTimer) { clearTimeout(aiGenerationTimer); aiGenerationTimer = null; }
+  closeSubScreen();
+}
+
+function renderAIResult() {
+  const ctx = window._aiFormCtx || { dest: '东京', days: 5, startDate: '2026-06-15', numPeople: 2, budget: '15000' };
+  const styleMap = { balanced:'均衡休闲', culture:'文化探索', food:'美食之旅', shopping:'购物天堂', adventure:'户外冒险', family:'亲子出行', romantic:'浪漫蜜月', business:'商务出行' };
+  const styleLabel = styleMap[ctx.style] || '均衡休闲';
+
+  const resultHTML = `
+    <div class="ai-result-summary">
+      <div class="ai-result-stat"><div class="stat-val">${ctx.days}</div><div class="stat-label">天数</div></div>
+      <div class="ai-result-stat"><div class="stat-val">${ctx.numPeople}</div><div class="stat-label">人数</div></div>
+      <div class="ai-result-stat"><div class="stat-val">¥${Number(ctx.budget).toLocaleString()}</div><div class="stat-label">预算</div></div>
+    </div>
+
+    <div class="ai-result-section">
+      <h3>📋 行程概览</h3>
+      <div class="ai-result-day">
+        <div class="ai-result-day-title"><span class="day-num">1</span>Day 1 — 抵达 ${ctx.dest}</div>
+        <div class="ai-result-item"><span class="item-time">10:00</span><div class="item-content">抵达机场，购买交通卡<div class="item-place">📍 机场到达大厅</div></div></div>
+        <div class="ai-result-item"><span class="item-time">14:00</span><div class="item-content">酒店入住，休整<div class="item-place">📍 市中心区域</div></div></div>
+        <div class="ai-result-item"><span class="item-time">16:00</span><div class="item-content">周边探索，熟悉环境<div class="item-place">📍 商业街区</div></div></div>
+        <div class="ai-result-item"><span class="item-time">19:00</span><div class="item-content">当地特色美食晚餐<div class="item-place">📍 美食街</div></div></div>
+      </div>
+      <div class="ai-result-day">
+        <div class="ai-result-day-title"><span class="day-num">2</span>Day 2 — 深度体验</div>
+        <div class="ai-result-item"><span class="item-time">09:00</span><div class="item-content">知名景点参观<div class="item-place">📍 文化地标</div></div></div>
+        <div class="ai-result-item"><span class="item-time">12:00</span><div class="item-content">午餐 — 当地特色餐厅<div class="item-place">📍 老城区</div></div></div>
+        <div class="ai-result-item"><span class="item-time">14:30</span><div class="item-content">特色街区漫步购物<div class="item-place">📍 特色商业街</div></div></div>
+        <div class="ai-result-item"><span class="item-time">18:00</span><div class="item-content">夜景观赏<div class="item-place">📍 观景台</div></div></div>
+      </div>
+      <div class="ai-result-day">
+        <div class="ai-result-day-title"><span class="day-num">3</span>Day 3 — 主题活动</div>
+        <div class="ai-result-item"><span class="item-time">09:00</span><div class="item-content">全天主题乐园/景区游玩<div class="item-place">📍 主题乐园</div></div></div>
+        <div class="ai-result-item"><span class="item-time">20:00</span><div class="item-content">晚间娱乐活动<div class="item-place">📍 娱乐区</div></div></div>
+      </div>
+      ${ctx.days > 3 ? `
+      <div class="ai-result-day">
+        <div class="ai-result-day-title"><span class="day-num">4</span>Day 4 — 自由活动</div>
+        <div class="ai-result-item"><span class="item-time">10:00</span><div class="item-content">根据兴趣自由安排（${styleLabel}）<div class="item-place">📍 自由探索</div></div></div>
+        <div class="ai-result-item"><span class="item-time">15:00</span><div class="item-content">伴手礼采购<div class="item-place">📍 购物中心</div></div></div>
+        <div class="ai-result-item"><span class="item-time">19:00</span><div class="item-content">告别晚餐<div class="item-place">📍 推荐餐厅</div></div></div>
+      </div>` : ''}
+    </div>
+
+    <div class="ai-result-section">
+      <h3>💡 旅行贴士</h3>
+      <div class="ai-result-tips">
+        <h4>🐕 贴心提醒</h4>
+        • 出发前确认签证和保险有效期<br>
+        • ${ctx.dest}最佳出行季节请参考当地气候<br>
+        • ${ctx.numPeople}人出行建议提前预订热门景点门票<br>
+        • ${ctx.special ? '特殊需求已记录：' + ctx.special : '建议携带轻便行李，方便移动'}<br>
+        • 预算 ¥${Number(ctx.budget).toLocaleString()} 可覆盖机票+酒店+餐饮+门票
+      </div>
+    </div>
+  `;
+
+  document.getElementById('ai-result-body').innerHTML = resultHTML;
 }
 
 function clearAIForm() {
@@ -1971,7 +2603,10 @@ function clearAIForm() {
   document.getElementById('ai-num-people').value = 2;
 }
 
-function applyAIPlan() { showToast('已应用到当前计划'); }
+function applyAIPlan() {
+  showToast('已应用到当前计划');
+  closeSubScreen();
+}
 function copyAIPlan() { showToast('已复制到剪贴板'); }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2044,6 +2679,35 @@ function sendChat() {
     chatMessages.push({ role: 'bot', text: reply, time });
     renderChat();
   }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════
+function openModal(title, fields, onSave) {
+  const overlay = document.getElementById('modal-overlay');
+  const sheet = document.getElementById('modal-sheet');
+  let html = `<h3>${title}</h3>`;
+  fields.forEach(f => {
+    html += `<label>${f.label}</label>`;
+    if (f.type === 'select') {
+      html += `<select id="${f.id}">${f.options.map(o => `<option value="${o.value}" ${o.value === f.value ? 'selected' : ''}>${o.label}</option>`).join('')}</select>`;
+    } else if (f.type === 'date') {
+      html += `<input id="${f.id}" type="date" value="${f.value || ''}">`;
+    } else if (f.type === 'number') {
+      html += `<input id="${f.id}" type="number" value="${f.value || 0}">`;
+    } else {
+      html += `<input id="${f.id}" value="${f.value || ''}">`;
+    }
+  });
+  html += `<div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">取消</button><button class="btn btn-primary" id="modal-save">保存</button></div>`;
+  sheet.innerHTML = html;
+  overlay.classList.add('show');
+  document.getElementById('modal-save').onclick = () => { onSave(); closeModal(); };
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
 }
 
 // ═══════════════════════════════════════════════════════════════

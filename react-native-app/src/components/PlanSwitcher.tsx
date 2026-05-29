@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 import { useApp } from '../store/AppContext';
@@ -8,13 +8,34 @@ import { PLAN_STATUSES } from '../store/types';
 interface PlanSwitcherProps {
   onPlanSelect: (planId: string) => void;
   onCreatePlan: () => void;
+  onEditPlan?: (planId: string) => void;
+  onDeletePlan?: (planId: string) => void;
 }
 
-export function PlanSwitcher({ onPlanSelect, onCreatePlan }: PlanSwitcherProps) {
-  const { state, getActivePlan } = useApp();
+export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeletePlan }: PlanSwitcherProps) {
+  const { state, getActivePlan, dispatch } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const plan = getActivePlan();
   const status = PLAN_STATUSES[plan.status];
+
+  const handleDeletePlan = (planId: string) => {
+    const planName = state.plans[planId]?.name || '此计划';
+    Alert.alert(
+      '确认删除',
+      `确定要删除"${planName}"吗？此操作不可撤销。`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: () => {
+            dispatch({ type: 'DELETE_PLAN', payload: planId });
+            if (onDeletePlan) onDeletePlan(planId);
+          }
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -42,25 +63,44 @@ export function PlanSwitcher({ onPlanSelect, onCreatePlan }: PlanSwitcherProps) 
           {Object.values(state.plans).map((p) => {
             const s = PLAN_STATUSES[p.status];
             return (
-              <TouchableOpacity
-                key={p.id}
-                style={[
-                  styles.dropdownItem,
-                  p.id === state.activePlanId && styles.dropdownItemActive,
-                ]}
-                onPress={() => {
-                  onPlanSelect(p.id);
-                  setIsOpen(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.dropdownItemName}>{p.name}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: s.color + '20' }]}>
-                  <Text style={[styles.statusText, { color: s.color }]}>
-                    {s.label}
-                  </Text>
+              <View key={p.id} style={styles.dropdownItemContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownItem,
+                    p.id === state.activePlanId && styles.dropdownItemActive,
+                  ]}
+                  onPress={() => {
+                    onPlanSelect(p.id);
+                    setIsOpen(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.dropdownItemName}>{p.name}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: s.color + '20' }]}>
+                    <Text style={[styles.statusText, { color: s.color }]}>
+                      {s.label}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <View style={styles.planActions}>
+                  {onEditPlan && (
+                    <TouchableOpacity
+                      style={styles.planActionButton}
+                      onPress={() => onEditPlan(p.id)}
+                    >
+                      <Ionicons name="create-outline" size={16} color={Colors.muted} />
+                    </TouchableOpacity>
+                  )}
+                  {onDeletePlan && Object.keys(state.plans).length > 1 && (
+                    <TouchableOpacity
+                      style={styles.planActionButton}
+                      onPress={() => handleDeletePlan(p.id)}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
           <TouchableOpacity
@@ -118,13 +158,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
   },
+  dropdownItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
   dropdownItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
   },
   dropdownItemActive: {
     backgroundColor: Colors.accent + '10',
@@ -133,5 +178,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: Typography.base,
     fontWeight: Typography.medium,
+  },
+  planActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingRight: Spacing.md,
+  },
+  planActionButton: {
+    padding: Spacing.xs,
   },
 });
