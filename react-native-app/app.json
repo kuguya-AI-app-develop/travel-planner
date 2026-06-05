@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "travel-planner",
+    "slug": "travel-planner",
+    "scheme": "travel-planner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app_icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.travelplanner.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/app_icon.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/app_icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-dev-client"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8bcb37cc-fe7e-4c09-9ad4-a0af3d42a17b"
+      }
+    }
+  }
+}
