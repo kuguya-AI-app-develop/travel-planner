@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
 import { Colors, Typography, Spacing } from '../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -9,7 +8,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface AILoadingAnimationProps {
   currentStep: number; // 0: analyzing, 1: planning, 2: optimizing
   onCancel?: () => void;
-  useVideo?: boolean;
 }
 
 const STEPS = [
@@ -18,7 +16,7 @@ const STEPS = [
   { key: 'optimizing', label: '优化方案中...', icon: 'flash' as const },
 ];
 
-export function AILoadingAnimation({ currentStep, onCancel, useVideo = false }: AILoadingAnimationProps) {
+export function AILoadingAnimation({ currentStep, onCancel }: AILoadingAnimationProps) {
   // 轨道旋转动画
   const rotate1 = useRef(new Animated.Value(0)).current;
   const rotate2 = useRef(new Animated.Value(0)).current;
@@ -30,9 +28,6 @@ export function AILoadingAnimation({ currentStep, onCancel, useVideo = false }: 
   // 光晕脉冲动画
   const glowOpacity = useRef(new Animated.Value(0.3)).current;
   const glowScale = useRef(new Animated.Value(1)).current;
-
-  // 视频引用
-  const videoRef = useRef<Video>(null);
 
   useEffect(() => {
     // 轨道旋转
@@ -134,80 +129,62 @@ export function AILoadingAnimation({ currentStep, onCancel, useVideo = false }: 
 
   return (
     <View style={styles.container}>
-      {useVideo ? (
-        // 视频加载动画
-        <View style={styles.videoContainer}>
-          <Video
-            ref={videoRef}
-            source={require('../../assets/ai-plan-loading.mp4')}
-            style={styles.video}
-            resizeMode={ResizeMode.CONTAIN}
-            isLooping
-            shouldPlay
-            useNativeControls={false}
-          />
-        </View>
-      ) : (
-        // CSS 动画加载
-        <>
-          {/* 光晕背景 */}
-          <Animated.View
-            style={[
-              styles.glow,
-              {
-                opacity: glowOpacity,
-                transform: [{ scale: glowScale }],
-              },
-            ]}
-          />
+      {/* 光晕背景 */}
+      <Animated.View
+        style={[
+          styles.glow,
+          {
+            opacity: glowOpacity,
+            transform: [{ scale: glowScale }],
+          },
+        ]}
+      />
 
-          {/* 轨道动画 */}
-          <View style={styles.orbitContainer}>
-            {/* 外圈 */}
-            <Animated.View
-              style={[
-                styles.orbitRing,
-                styles.orbitRing1,
-                { transform: [{ rotate: spin1 }] },
-              ]}
-            >
-              <View style={[styles.orbitDot, { backgroundColor: Colors.accent }]} />
-            </Animated.View>
+      {/* 轨道动画 */}
+      <View style={styles.orbitContainer}>
+        {/* 外圈 */}
+        <Animated.View
+          style={[
+            styles.orbitRing,
+            styles.orbitRing1,
+            { transform: [{ rotate: spin1 }] },
+          ]}
+        >
+          <View style={[styles.orbitDot, { backgroundColor: Colors.accent }]} />
+        </Animated.View>
 
-            {/* 中圈 */}
-            <Animated.View
-              style={[
-                styles.orbitRing,
-                styles.orbitRing2,
-                { transform: [{ rotate: spin2 }] },
-              ]}
-            >
-              <View style={[styles.orbitDot, { backgroundColor: '#A855F7' }]} />
-            </Animated.View>
+        {/* 中圈 */}
+        <Animated.View
+          style={[
+            styles.orbitRing,
+            styles.orbitRing2,
+            { transform: [{ rotate: spin2 }] },
+          ]}
+        >
+          <View style={[styles.orbitDot, { backgroundColor: '#A855F7' }]} />
+        </Animated.View>
 
-            {/* 内圈 */}
-            <Animated.View
-              style={[
-                styles.orbitRing,
-                styles.orbitRing3,
-                { transform: [{ rotate: spin3 }] },
-              ]}
-            >
-              <View style={[styles.orbitDot, { backgroundColor: '#EC4899' }]} />
-            </Animated.View>
+        {/* 内圈 */}
+        <Animated.View
+          style={[
+            styles.orbitRing,
+            styles.orbitRing3,
+            { transform: [{ rotate: spin3 }] },
+          ]}
+        >
+          <View style={[styles.orbitDot, { backgroundColor: '#EC4899' }]} />
+        </Animated.View>
 
-            {/* 中心爪印 */}
-            <Animated.View
-              style={[
-                styles.pawContainer,
-                { transform: [{ scale: pawScale }] },
-              ]}
-            >
-              <Ionicons name="paw" size={48} color={Colors.accent} />
-            </Animated.View>
-          </View>
-        </>
-      )}
+        {/* 中心爪印 */}
+        <Animated.View
+          style={[
+            styles.pawContainer,
+            { transform: [{ scale: pawScale }] },
+          ]}
+        >
+          <Ionicons name="paw" size={48} color={Colors.accent} />
+        </Animated.View>
+      </View>
 
       {/* 标题 */}
       <Text style={styles.title}>AI 正在为你策划旅行</Text>
@@ -270,17 +247,6 @@ const styles = StyleSheet.create({
     padding: Spacing['2xl'],
     position: 'relative',
     overflow: 'hidden',
-  },
-  videoContainer: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  video: {
-    width: '100%',
-    height: '100%',
   },
   glow: {
     position: 'absolute',
