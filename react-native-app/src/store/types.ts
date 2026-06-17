@@ -59,6 +59,11 @@ export interface Plan {
   packingItems: PackingItem[];
   documents: Document[];
   trips: Trip[];
+  flights: Flight[];
+  destinations: Destination[];
+  hotels: Hotel[];
+  expenses: Expense[];
+  checklistItems: ChecklistItem[];
 }
 
 // 航班类型

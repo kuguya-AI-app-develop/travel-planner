@@ -15,7 +15,8 @@ import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme
 import { BackHeader } from '../../../src/components/BackHeader';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
-import { loadAISettings } from '../../../src/utils/secureStorage';
+import { loadAISettings, isSecureStoreAvailable } from '../../../src/utils/secureStorage';
+import { useApp } from '../../../src/store/AppContext';
 import { DatePickerModal } from '../../../src/components/DatePickerModal';
 import * as Clipboard from 'expo-clipboard';
 import { AILoadingAnimation } from '../../../src/components/AILoadingAnimation';
@@ -83,6 +84,7 @@ const TRAVEL_PREFERENCES = [
 
 export default function AIPlanScreen() {
   const router = useRouter();
+  const { state, dispatch } = useApp();
   const { visible, message, showToast, hideToast } = useToast();
   const [screenState, setScreenState] = useState<ScreenState>('form');
   const [loadingStep, setLoadingStep] = useState(0);
@@ -90,17 +92,21 @@ export default function AIPlanScreen() {
   const [resultText, setResultText] = useState<string | null>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [destinations, setDestinations] = useState(['']);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [departCity, setDepartCity] = useState('');
-  const [returnCity, setReturnCity] = useState('');
-  const [hotelBudget, setHotelBudget] = useState('any');
-  const [flightBudget, setFlightBudget] = useState('any');
-  const [preferences, setPreferences] = useState<string[]>([]);
-  const [special, setSpecial] = useState('');
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  };
 
-  // 日期选择器状态
+  // 从 context 读取表单数据
+  const { aiPlanForm } = state;
+  const { destinations, startDate, endDate, departCity, returnCity, hotelBudget, flightBudget, preferences, special } = aiPlanForm;
+
+  // 更新表单字段的便捷函数
+  const updateForm = (fields: Record<string, any>) => {
+    dispatch({ type: 'UPDATE_AI_PLAN_FORM', payload: fields });
+  };
+
+  // 日期选择器状态（UI 临时状态，不需要持久化）
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'start' | 'end'>('start');
 
@@ -123,27 +129,26 @@ export default function AIPlanScreen() {
   const pickerMaxDate = datePickerTarget === 'start' ? endDateObj ?? undefined : undefined;
 
   const addDestination = () => {
-    setDestinations([...destinations, '']);
+    updateForm({ destinations: [...destinations, ''] });
   };
 
   const updateDestination = (index: number, value: string) => {
     const newDestinations = [...destinations];
     newDestinations[index] = value;
-    setDestinations(newDestinations);
+    updateForm({ destinations: newDestinations });
   };
 
   const removeDestination = (index: number) => {
     if (destinations.length > 1) {
-      setDestinations(destinations.filter((_, i) => i !== index));
+      updateForm({ destinations: destinations.filter((_, i) => i !== index) });
     }
   };
 
   const togglePreference = (value: string) => {
-    setPreferences(prev =>
-      prev.includes(value)
-        ? prev.filter(p => p !== value)
-        : [...prev, value]
-    );
+    const newPrefs = preferences.includes(value)
+      ? preferences.filter(p => p !== value)
+      : [...preferences, value];
+    updateForm({ preferences: newPrefs });
   };
 
   const openDatePicker = (target: 'start' | 'end') => {
@@ -158,14 +163,14 @@ export default function AIPlanScreen() {
     const day = String(date.getDate()).padStart(2, '0');
     const formatted = `${year}/${month}/${day}`;
     if (datePickerTarget === 'start') {
-      setStartDate(formatted);
+      updateForm({ startDate: formatted });
       if (endDate && formatted > endDate) {
-        setEndDate('');
+        updateForm({ startDate: formatted, endDate: getTodayStr() });
       }
     } else {
-      setEndDate(formatted);
+      updateForm({ endDate: formatted });
       if (startDate && formatted < startDate) {
-        setStartDate('');
+        updateForm({ endDate: formatted, startDate: getTodayStr() });
       }
     }
   };
@@ -186,15 +191,38 @@ export default function AIPlanScreen() {
       return;
     }
 
+    // 检查安全存储是否可用
+    const storeAvailable = await isSecureStoreAvailable();
+    if (!storeAvailable) {
+      Alert.alert(
+        '存储不可用',
+        '安全存储服务不可用，无法读取 API Key。请检查系统设置或重启应用后重试。',
+        [{ text: '确定' }]
+      );
+      return;
+    }
+
     // 检查 API Key 是否已配置
     const settings = await loadAISettings();
     if (!settings.apiKey) {
       Alert.alert(
         '未配置 API Key',
-        '请先在 AI 设置中配置 API Key，才能使用智能策划功能。',
+        '请先在 AI 设置中配置 API Key，才能使用智能策划功能。\n\n提示：清除应用数据后需要重新配置。',
         [
           { text: '取消', style: 'cancel' },
-          { text: '去设置', onPress: () => router.push('/ai-settings') },
+          { text: '去设置', onPress: () => router.navigate('/ai-settings') },
+        ]
+      );
+      return;
+    }
+
+    if (!settings.baseUrl) {
+      Alert.alert(
+        '未配置 Base URL',
+        '请先在 AI 设置中保存 API Base URL，才能使用智能策划功能。',
+        [
+          { text: '取消', style: 'cancel' },
+          { text: '去设置', onPress: () => router.navigate('/ai-settings') },
         ]
       );
       return;
@@ -215,7 +243,7 @@ export default function AIPlanScreen() {
 
       const provider = settings.provider || 'openai';
       const model = settings.model || 'gpt-4o';
-      const baseUrl = settings.baseUrl || 'https://api.openai.com/v1';
+      const baseUrl = settings.baseUrl as string;
 
       // 构建用户需求 prompt
       const destStr = validDestinations.join('、');
@@ -257,7 +285,7 @@ export default function AIPlanScreen() {
         if (response.status === 401) {
           Alert.alert('API Key 无效', '请在 AI 设置中检查并更新 API Key。', [
             { text: '取消', style: 'cancel' },
-            { text: '去设置', onPress: () => router.push('/ai-settings') },
+            { text: '去设置', onPress: () => router.navigate('/ai-settings') },
           ]);
         } else {
           showToast(`请求失败：${errorMsg}`);
@@ -281,7 +309,14 @@ export default function AIPlanScreen() {
       }
     } catch (error: any) {
       if (error.message?.includes('Network') || error.message?.includes('fetch')) {
-        showToast('网络连接失败，请检查网络');
+        Alert.alert(
+          '网络连接失败',
+          `无法连接到 API 服务。\n\n服务商：${settings.provider}\n地址：${settings.baseUrl}\n\n请检查网络和 API 设置。`,
+          [
+            { text: '取消', style: 'cancel' },
+            { text: '去设置', onPress: () => router.navigate('/ai-settings') },
+          ]
+        );
       } else if (error.message?.includes('timeout')) {
         showToast('请求超时，请稍后重试');
       } else {
@@ -313,9 +348,14 @@ export default function AIPlanScreen() {
     for (const line of lines) {
       const trimmedLine = line.trim();
 
-      // 提取标题
-      if (trimmedLine.startsWith('# ') || trimmedLine.startsWith('## ')) {
-        title = trimmedLine.replace(/^#+\s*/, '');
+      // 跳过空行、分隔线、markdown 标记
+      if (!trimmedLine || trimmedLine === '---' || trimmedLine === '***' || trimmedLine === '___') {
+        continue;
+      }
+
+      // 提取标题（仅一级标题）
+      if (trimmedLine.startsWith('# ') && !trimmedLine.startsWith('## ')) {
+        title = trimmedLine.replace(/^#+\s*/, '').replace(/\*\*/g, '');
       }
 
       // 提取天数
@@ -333,36 +373,42 @@ export default function AIPlanScreen() {
       // 提取预算
       const budgetMatch = trimmedLine.match(/预算[：:]\s*(.+)/);
       if (budgetMatch) {
-        budget = budgetMatch[1];
+        budget = budgetMatch[1].replace(/\*\*/g, '');
       }
 
-      // 识别每日行程
-      const dayTitleMatch = trimmedLine.match(/^#+\s*(?:第\d+天|Day\s*\d+)/i);
+      // 识别每日行程标题
+      const dayTitleMatch = trimmedLine.match(/^#{1,3}\s*(?:第\s*\d+\s*天|Day\s*\d+|第.*天)/i);
       if (dayTitleMatch) {
         if (currentDay) {
           itinerary.push(currentDay);
         }
         currentDay = {
           day: itinerary.length + 1,
-          title: trimmedLine.replace(/^#+\s*/, ''),
+          title: trimmedLine.replace(/^#+\s*/, '').replace(/\*\*/g, ''),
           items: [],
         };
       }
 
-      // 识别时间点和活动
+      // 识别时间点和活动（必须有 currentDay 且匹配 HH:MM 格式）
       if (currentDay) {
-        const timeMatch = trimmedLine.match(/^(\d{1,2}[:：]\d{2})\s*(.+)/);
+        const timeMatch = trimmedLine.match(/^(\d{1,2}[:：]\d{2})\s*[-—–:：]\s*(.+)/);
         if (timeMatch) {
-          currentDay.items.push({
-            time: timeMatch[1],
-            content: timeMatch[2],
-          });
+          const content = timeMatch[2].replace(/\*\*/g, '').replace(/^[-—–]\s*/, '');
+          if (content.trim()) {
+            currentDay.items.push({
+              time: timeMatch[1],
+              content: content.trim(),
+            });
+          }
         }
       }
 
-      // 识别贴士
-      if (trimmedLine.startsWith('- ') && !currentDay) {
-        tips.push(trimmedLine.substring(2));
+      // 识别贴士（- 开头的列表项，且不在日程中）
+      if (!currentDay && trimmedLine.startsWith('- ')) {
+        const tipText = trimmedLine.substring(2).replace(/\*\*/g, '').trim();
+        if (tipText) {
+          tips.push(tipText);
+        }
       }
     }
 
@@ -378,11 +424,24 @@ export default function AIPlanScreen() {
 
     // 如果没有解析到足够的信息，使用默认值
     if (itinerary.length === 0) {
-      // 创建一个默认的行程
-      const contentLines = content.split('\n').filter(l => l.trim());
+      // 过滤掉 markdown 标记行，只保留有意义的内容
+      const contentLines = content.split('\n')
+        .map(l => l.trim())
+        .filter(l => l
+          && l !== '---' && l !== '***' && l !== '___'
+          && !l.startsWith('# ')
+          && !l.startsWith('## ')
+          && !l.startsWith('### ')
+          && !l.startsWith('**')
+          && !l.startsWith('- ')
+          && !l.match(/^\*\*/)
+        )
+        .map(l => l.replace(/\*\*/g, '').trim())
+        .filter(l => l.length > 2);
+
       const items: ItineraryItem[] = contentLines.slice(0, 5).map((line, index) => ({
         time: `${9 + index}:00`,
-        content: line.trim(),
+        content: line,
       }));
 
       if (items.length > 0) {
@@ -406,21 +465,84 @@ export default function AIPlanScreen() {
   };
 
   const handleClear = () => {
-    setDestinations(['']);
-    setStartDate('');
-    setEndDate('');
-    setDepartCity('');
-    setReturnCity('');
-    setHotelBudget('any');
-    setFlightBudget('any');
-    setPreferences([]);
-    setSpecial('');
+    dispatch({ type: 'RESET_AI_PLAN_FORM' });
     setResultData(null);
     setResultText(null);
     setShowDatePicker(false);
   };
 
-  const handleApply = () => {
+  const handleApply = (result: AIPlanResult) => {
+    // 将 AI 结果的日期范围基于表单输入
+    const startDateStr = startDate.replace(/\//g, '-');
+    const endDateStr = endDate.replace(/\//g, '-');
+
+    // 将 AI 的 itinerary 转换为 Plan 的 ItineraryItem 格式
+    const itineraryItems: Array<{
+      id: number;
+      date: string;
+      time: string;
+      title: string;
+      location: string;
+      type: 'sight' | 'food' | 'transport' | 'hotel' | 'other';
+      duration: number;
+      notes: string;
+    }> = [];
+
+    let itemId = 1;
+    for (const day of result.itinerary) {
+      // 根据 day number 计算日期
+      const dayDate = new Date(startDate);
+      dayDate.setDate(dayDate.getDate() + day.day - 1);
+      const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+
+      for (const item of day.items) {
+        // 简单推断类型
+        let type: 'sight' | 'food' | 'transport' | 'hotel' | 'other' = 'other';
+        const contentLower = item.content.toLowerCase();
+        if (contentLower.includes('餐') || contentLower.includes('食') || contentLower.includes('吃') || contentLower.includes('饭') || contentLower.includes('料理') || contentLower.includes('寿司')) {
+          type = 'food';
+        } else if (contentLower.includes('酒店') || contentLower.includes('入住') || contentLower.includes('旅馆') || contentLower.includes('温泉')) {
+          type = 'hotel';
+        } else if (contentLower.includes('机场') || contentLower.includes('飞机') || contentLower.includes('高铁') || contentLower.includes('地铁') || contentLower.includes('火车') || contentLower.includes('出发') || contentLower.includes('抵达')) {
+          type = 'transport';
+        } else if (contentLower.includes('寺') || contentLower.includes('神社') || contentLower.includes('公园') || contentLower.includes('博物馆') || contentLower.includes('景点') || contentLower.includes('游') || contentLower.includes('逛')) {
+          type = 'sight';
+        }
+
+        // 清理 markdown 语法残留
+        const cleanTitle = item.content
+          .replace(/\*\*(.+?)\*\*/g, '$1')   // **加粗** → 加粗
+          .replace(/__(.+?)__/g, '$1')         // __加粗__ → 加粗
+          .replace(/\*(.+?)\*/g, '$1')         // *斜体* → 斜体
+          .replace(/^#+\s*/, '')               // ## 标题 → 标题
+          .replace(/^[-—–]\s*/, '')            // - 内容 → 内容
+          .trim();
+
+        if (!cleanTitle) continue;
+
+        itineraryItems.push({
+          id: itemId++,
+          date: dateStr,
+          time: item.time,
+          title: cleanTitle,
+          location: (item.location || '').replace(/\*\*/g, ''),
+          type,
+          duration: 60,
+          notes: '',
+        });
+      }
+    }
+
+    const destStr = destinations.filter(d => d.trim()).join('、');
+    const tripName = `${destStr}旅行`;
+    const trip = {
+      name: tripName,
+      start: startDateStr,
+      end: endDateStr,
+      color: '#D4A853',
+    };
+
+    dispatch({ type: 'APPLY_AI_PLAN', payload: { itineraryItems, trip } });
     showToast('已应用到当前计划');
     router.back();
   };
@@ -458,6 +580,7 @@ export default function AIPlanScreen() {
       <View style={styles.container}>
         <AIResultView
           result={resultData}
+          rawText={resultText || ''}
           onApply={handleApply}
           onCopy={handleCopy}
           onBack={handleBackToForm}
@@ -528,7 +651,7 @@ export default function AIPlanScreen() {
                 </Text>
                 <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('start')}>
                   <Text style={[styles.dateText, !startDate && styles.datePlaceholder]}>
-                    {startDate || '2026/06/09'}
+                    {startDate || getTodayStr()}
                   </Text>
                   <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
                 </TouchableOpacity>
@@ -539,7 +662,7 @@ export default function AIPlanScreen() {
                 </Text>
                 <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('end')}>
                   <Text style={[styles.dateText, !endDate && styles.datePlaceholder]}>
-                    {endDate || '2026/06/13'}
+                    {endDate || getTodayStr()}
                   </Text>
                   <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
                 </TouchableOpacity>
@@ -553,7 +676,7 @@ export default function AIPlanScreen() {
                 <TextInput
                   style={styles.input}
                   value={departCity}
-                  onChangeText={setDepartCity}
+                  onChangeText={(v) => updateForm({ departCity: v })}
                   placeholder="例如：上海"
                   placeholderTextColor={Colors.mutedLight}
                 />
@@ -563,7 +686,7 @@ export default function AIPlanScreen() {
                 <TextInput
                   style={styles.input}
                   value={returnCity}
-                  onChangeText={setReturnCity}
+                  onChangeText={(v) => updateForm({ returnCity: v })}
                   placeholder="例如：上海（可选）"
                   placeholderTextColor={Colors.mutedLight}
                 />
@@ -581,7 +704,7 @@ export default function AIPlanScreen() {
                       styles.optionButton,
                       hotelBudget === option.value && styles.optionButtonActive,
                     ]}
-                    onPress={() => setHotelBudget(option.value)}
+                    onPress={() => updateForm({ hotelBudget: option.value })}
                   >
                     <Text style={[
                       styles.optionText,
@@ -605,7 +728,7 @@ export default function AIPlanScreen() {
                       styles.optionButton,
                       flightBudget === option.value && styles.optionButtonActive,
                     ]}
-                    onPress={() => setFlightBudget(option.value)}
+                    onPress={() => updateForm({ flightBudget: option.value })}
                   >
                     <Text style={[
                       styles.optionText,
@@ -648,7 +771,7 @@ export default function AIPlanScreen() {
               <TextInput
                 style={[styles.input, styles.textarea]}
                 value={special}
-                onChangeText={setSpecial}
+                onChangeText={(v) => updateForm({ special: v })}
                 placeholder="例如：带老人出行需要轻松行程、想去迪士尼乐园、不吃辣..."
                 placeholderTextColor={Colors.mutedLight}
                 multiline

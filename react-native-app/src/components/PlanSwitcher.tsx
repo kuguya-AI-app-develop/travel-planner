@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, TextInput, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../theme';
 import { useApp } from '../store/AppContext';
-import { PLAN_STATUSES } from '../store/types';
+import { PLAN_STATUSES, PlanStatus } from '../store/types';
 
 interface PlanSwitcherProps {
   onPlanSelect: (planId: string) => void;
   onCreatePlan: () => void;
-  onEditPlan?: (planId: string) => void;
-  onDeletePlan?: (planId: string) => void;
 }
 
-export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeletePlan }: PlanSwitcherProps) {
+export function PlanSwitcher({ onPlanSelect, onCreatePlan }: PlanSwitcherProps) {
   const { state, getActivePlan, dispatch } = useApp();
   const [isOpen, setIsOpen] = useState(false);
+  const [editPlanId, setEditPlanId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
   const plan = getActivePlan();
   const status = PLAN_STATUSES[plan.status];
 
@@ -30,11 +30,29 @@ export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeleteP
           style: 'destructive',
           onPress: () => {
             dispatch({ type: 'DELETE_PLAN', payload: planId });
-            if (onDeletePlan) onDeletePlan(planId);
           }
         },
       ]
     );
+  };
+
+  const handleOpenEdit = (planId: string) => {
+    const planData = state.plans[planId];
+    if (planData) {
+      setEditPlanId(planId);
+      setEditName(planData.name);
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (editPlanId && editName.trim()) {
+      dispatch({ type: 'UPDATE_PLAN', payload: { id: editPlanId, name: editName.trim() } });
+      setEditPlanId(null);
+    }
+  };
+
+  const handleChangeStatus = (planId: string, newStatus: PlanStatus) => {
+    dispatch({ type: 'UPDATE_PLAN_STATUS', payload: { id: planId, status: newStatus } });
   };
 
   return (
@@ -75,7 +93,7 @@ export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeleteP
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.dropdownItemName}>{p.name}</Text>
+                  <Text style={styles.dropdownItemName} numberOfLines={1}>{p.name}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: s.color + '20' }]}>
                     <Text style={[styles.statusText, { color: s.color }]}>
                       {s.label}
@@ -83,15 +101,13 @@ export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeleteP
                   </View>
                 </TouchableOpacity>
                 <View style={styles.planActions}>
-                  {onEditPlan && (
-                    <TouchableOpacity
-                      style={styles.planActionButton}
-                      onPress={() => onEditPlan(p.id)}
-                    >
-                      <Ionicons name="create-outline" size={16} color={Colors.muted} />
-                    </TouchableOpacity>
-                  )}
-                  {onDeletePlan && Object.keys(state.plans).length > 1 && (
+                  <TouchableOpacity
+                    style={styles.planActionButton}
+                    onPress={() => handleOpenEdit(p.id)}
+                  >
+                    <Ionicons name="create-outline" size={16} color={Colors.muted} />
+                  </TouchableOpacity>
+                  {Object.keys(state.plans).length > 1 && (
                     <TouchableOpacity
                       style={styles.planActionButton}
                       onPress={() => handleDeletePlan(p.id)}
@@ -117,6 +133,62 @@ export function PlanSwitcher({ onPlanSelect, onCreatePlan, onEditPlan, onDeleteP
           </TouchableOpacity>
         </View>
       )}
+
+      {/* 编辑计划名称弹窗 */}
+      <Modal visible={!!editPlanId} transparent animationType="fade">
+        <Pressable style={styles.modalOverlay} onPress={() => setEditPlanId(null)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <Text style={styles.modalTitle}>编辑计划</Text>
+
+            <Text style={styles.modalLabel}>计划名称</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={editName}
+              onChangeText={setEditName}
+              placeholder="输入计划名称"
+              placeholderTextColor={Colors.mutedLight}
+            />
+
+            <Text style={styles.modalLabel}>计划状态</Text>
+            <View style={styles.statusGroup}>
+              {(Object.keys(PLAN_STATUSES) as PlanStatus[]).map((s) => {
+                const statusInfo = PLAN_STATUSES[s];
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    style={[
+                      styles.statusBtn,
+                      editPlanId && state.plans[editPlanId]?.status === s && {
+                        backgroundColor: statusInfo.color,
+                        borderColor: statusInfo.color,
+                      },
+                    ]}
+                    onPress={() => editPlanId && handleChangeStatus(editPlanId, s)}
+                  >
+                    <Text
+                      style={[
+                        styles.statusBtnText,
+                        editPlanId && state.plans[editPlanId]?.status === s && { color: '#fff' },
+                      ]}
+                    >
+                      {statusInfo.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditPlanId(null)}>
+                <Text style={styles.modalCancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSave} onPress={handleSaveEdit}>
+                <Text style={styles.modalSaveText}>保存</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -178,13 +250,99 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: Typography.base,
     fontWeight: Typography.medium,
+    marginRight: Spacing.sm,
   },
   planActions: {
     flexDirection: 'row',
     gap: Spacing.sm,
     paddingRight: Spacing.md,
+    flexShrink: 0,
   },
   planActionButton: {
-    padding: Spacing.xs,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  modalTitle: {
+    fontSize: Typography.lg,
+    fontWeight: Typography.bold,
+    marginBottom: Spacing.lg,
+  },
+  modalLabel: {
+    fontSize: Typography.sm,
+    color: Colors.muted,
+    marginBottom: Spacing.xs,
+    fontWeight: Typography.semibold,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: Typography.base,
+    color: Colors.fg,
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surface,
+  },
+  statusGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  statusBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+  },
+  statusBtnText: {
+    fontSize: Typography.sm,
+    color: Colors.fg,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  modalCancel: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: Typography.base,
+    color: Colors.fg2,
+  },
+  modalSave: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    fontSize: Typography.base,
+    color: Colors.surface,
+    fontWeight: Typography.semibold,
   },
 });

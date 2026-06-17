@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 import { Colors, Typography, Spacing, Radius } from '../theme';
-
-const pomeranianImage = require('../../assets/pomeranian-planner.jpg');
 
 interface AIResultViewProps {
   result: {
@@ -22,12 +21,13 @@ interface AIResultViewProps {
     }>;
     tips?: string[];
   };
-  onApply: () => void;
+  rawText: string;
+  onApply: (result: AIResultViewProps['result']) => void;
   onCopy: () => void;
   onBack: () => void;
 }
 
-export function AIResultView({ result, onApply, onCopy, onBack }: AIResultViewProps) {
+export function AIResultView({ result, rawText, onApply, onCopy, onBack }: AIResultViewProps) {
   return (
     <View style={styles.container}>
       {/* 头部 */}
@@ -58,49 +58,17 @@ export function AIResultView({ result, onApply, onCopy, onBack }: AIResultViewPr
           </View>
         </View>
 
-        {/* 每日行程 */}
-        {result.itinerary.map((day) => (
-          <View key={day.day} style={styles.daySection}>
-            <View style={styles.dayTitleRow}>
-              <View style={styles.dayBadge}>
-                <Text style={styles.dayBadgeText}>{day.day}</Text>
-              </View>
-              <Text style={styles.dayTitle}>{day.title}</Text>
-            </View>
-
-            {day.items.map((item, index) => (
-              <View key={index} style={styles.itemRow}>
-                <Text style={styles.itemTime}>{item.time}</Text>
-                <View style={styles.itemContent}>
-                  <Text style={styles.itemText}>{item.content}</Text>
-                  {item.location && (
-                    <View style={styles.itemLocation}>
-                      <Ionicons name="location-outline" size={11} color={Colors.accent} />
-                      <Text style={styles.itemLocationText}>{item.location}</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-        ))}
-
-        {/* 旅行贴士 */}
-        {result.tips && result.tips.length > 0 && (
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>旅行贴士</Text>
-            {result.tips.map((tip, index) => (
-              <Text key={index} style={styles.tipText}>• {tip}</Text>
-            ))}
-          </View>
-        )}
+        {/* Markdown 内容 */}
+        <View style={styles.markdownContainer}>
+          <Markdown style={markdownStyles}>{rawText}</Markdown>
+        </View>
 
         <View style={{ height: 20 }} />
       </ScrollView>
 
       {/* 底部操作按钮 */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.applyButton} onPress={onApply}>
+        <TouchableOpacity style={styles.applyButton} onPress={() => onApply(result)}>
           <Ionicons name="checkmark-circle" size={18} color="#fff" />
           <Text style={styles.applyButtonText}>应用到当前计划</Text>
         </TouchableOpacity>
@@ -112,6 +80,108 @@ export function AIResultView({ result, onApply, onCopy, onBack }: AIResultViewPr
     </View>
   );
 }
+
+// Markdown 样式
+const markdownStyles = {
+  body: {
+    fontSize: Typography.base,
+    lineHeight: 24,
+    color: Colors.fg,
+  },
+  heading1: {
+    fontSize: Typography.xl,
+    fontWeight: Typography.bold as any,
+    color: Colors.fg,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  heading2: {
+    fontSize: Typography.lg,
+    fontWeight: Typography.bold as any,
+    color: Colors.accent,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+  heading3: {
+    fontSize: Typography.md,
+    fontWeight: Typography.semibold as any,
+    color: Colors.fg,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  bold: {
+    fontWeight: Typography.bold as any,
+  },
+  link: {
+    color: Colors.accent,
+  },
+  list_item: {
+    fontSize: Typography.base,
+    color: Colors.fg,
+    lineHeight: 24,
+  },
+  bullet_list: {
+    marginBottom: Spacing.sm,
+  },
+  ordered_list: {
+    marginBottom: Spacing.sm,
+  },
+  code_inline: {
+    backgroundColor: Colors.surfaceRaised,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    fontSize: Typography.sm,
+    fontFamily: Typography.mono,
+    color: Colors.accent,
+  },
+  code_block: {
+    backgroundColor: Colors.surfaceRaised,
+    padding: Spacing.md,
+    borderRadius: Radius.sm,
+    marginBottom: Spacing.sm,
+    fontFamily: Typography.mono,
+    fontSize: Typography.sm,
+    color: Colors.fg,
+  },
+  fence: {
+    backgroundColor: Colors.surfaceRaised,
+    padding: Spacing.md,
+    borderRadius: Radius.sm,
+    marginBottom: Spacing.sm,
+    fontFamily: Typography.mono,
+    fontSize: Typography.sm,
+    color: Colors.fg,
+  },
+  blockquote: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+    paddingLeft: Spacing.md,
+    marginBottom: Spacing.sm,
+    color: Colors.muted,
+  },
+  hr: {
+    backgroundColor: Colors.border,
+    height: 1,
+    marginVertical: Spacing.md,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    marginBottom: Spacing.sm,
+  },
+  th: {
+    padding: Spacing.sm,
+    backgroundColor: Colors.surfaceRaised,
+    fontWeight: Typography.bold as any,
+  },
+  td: {
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -176,86 +246,12 @@ const styles = StyleSheet.create({
     color: Colors.muted,
     marginTop: 2,
   },
-  daySection: {
-    marginBottom: Spacing.xl,
-  },
-  dayTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  dayBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayBadgeText: {
-    fontSize: 11,
-    fontWeight: Typography.bold,
-    color: '#fff',
-  },
-  dayTitle: {
-    fontSize: Typography.md,
-    fontWeight: Typography.bold,
-    color: Colors.accent,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-  },
-  itemTime: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    fontWeight: Typography.semibold,
-    minWidth: 45,
-    fontVariant: ['tabular-nums'],
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemText: {
-    fontSize: Typography.base,
-    lineHeight: 20,
-  },
-  itemLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 4,
-  },
-  itemLocationText: {
-    fontSize: Typography.xs,
-    color: Colors.accent,
-  },
-  tipsContainer: {
-    backgroundColor: Colors.warn + '10',
+  markdownContainer: {
+    backgroundColor: Colors.surfaceCard,
+    borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.warn + '30',
-    borderRadius: Radius.md,
+    borderColor: Colors.border,
     padding: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  tipsTitle: {
-    fontSize: Typography.md,
-    fontWeight: Typography.bold,
-    color: Colors.warn,
-    marginBottom: Spacing.sm,
-  },
-  tipText: {
-    fontSize: Typography.sm,
-    lineHeight: 20,
-    color: Colors.fg,
-    marginBottom: Spacing.xs,
   },
   actions: {
     flexDirection: 'row',

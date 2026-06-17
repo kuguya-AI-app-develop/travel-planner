@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors, Typography, Spacing } from '../../src/theme';
 import { useApp } from '../../src/store/AppContext';
 import { PlanSwitcher } from '../../src/components/PlanSwitcher';
@@ -19,18 +19,25 @@ export default function HomeScreen() {
   const plan = getActivePlan();
   const [chatOpen, setChatOpen] = useState(false);
 
+  // 防御性兜底：旧数据可能缺少新字段
+  const flights = plan.flights || [];
+  const destinations = plan.destinations || [];
+  const hotels = plan.hotels || [];
+  const expenses = plan.expenses || [];
+  const checklistItems = plan.checklistItems || [];
+
   // 计算预算
-  const selectedFlights = state.flights.filter(f => f.selected);
+  const selectedFlights = flights.filter(f => f.selected);
   const flightTotal = selectedFlights.reduce((s, f) => s + f.price, 0);
-  const selectedHotels = state.hotels.filter(h => h.selected);
+  const selectedHotels = hotels.filter(h => h.selected);
   const hotelTotal = selectedHotels.reduce((s, h) => s + h.priceNum, 0);
-  const selectedExpenses = state.expenses.filter(e => e.selected);
+  const selectedExpenses = expenses.filter(e => e.selected);
   const expenseTotal = selectedExpenses.reduce((s, e) => s + e.amount, 0);
   const total = flightTotal + hotelTotal + expenseTotal;
 
   // 计算待办完成
-  const doneCount = state.checklistItems.filter(i => i.done).length;
-  const totalCount = state.checklistItems.length;
+  const doneCount = checklistItems.filter(i => i.done).length;
+  const totalCount = checklistItems.length;
   const donePercent = Math.round(doneCount / totalCount * 100);
 
   const handlePlanSelect = (planId: string) => {
@@ -55,43 +62,43 @@ export default function HomeScreen() {
       name: '行程日历',
       desc: `${plan.trips.length} 个行程`,
       count: plan.trips.length,
-      onPress: () => router.push('/calendar'),
+      onPress: () => router.navigate('/calendar'),
     },
     {
       icon: 'airplane' as const,
       iconColor: Colors.teal,
       iconBg: Colors.teal + '15',
       name: '机票对比',
-      desc: `${state.flights.length} 个航班`,
-      count: state.flights.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/flights'),
+      desc: `${flights.length} 个航班`,
+      count: flights.length,
+      onPress: () => router.navigate('/(tabs)/(subscreens)/flights'),
     },
     {
       icon: 'location' as const,
       iconColor: Colors.coral,
       iconBg: Colors.coral + '15',
       name: '目的地',
-      desc: `${state.destinations.length} 个目的地`,
-      count: state.destinations.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/destinations'),
+      desc: `${destinations.length} 个目的地`,
+      count: destinations.length,
+      onPress: () => router.navigate('/(tabs)/(subscreens)/destinations'),
     },
     {
       icon: 'bed' as const,
       iconColor: Colors.purple,
       iconBg: Colors.purple + '15',
       name: '酒店评分',
-      desc: `${state.hotels.length} 家酒店`,
-      count: state.hotels.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/hotels'),
+      desc: `${hotels.length} 家酒店`,
+      count: hotels.length,
+      onPress: () => router.navigate('/(tabs)/(subscreens)/hotels'),
     },
     {
       icon: 'wallet' as const,
       iconColor: Colors.warn,
       iconBg: Colors.warn + '15',
       name: '其他消费',
-      desc: `${state.expenses.length} 项消费`,
-      count: state.expenses.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/expenses'),
+      desc: `${expenses.length} 项消费`,
+      count: expenses.length,
+      onPress: () => router.navigate('/(tabs)/(subscreens)/expenses'),
     },
     {
       icon: 'list' as const,
@@ -100,7 +107,7 @@ export default function HomeScreen() {
       name: '每日行程',
       desc: `${plan.itineraryItems.length} 项活动`,
       count: plan.itineraryItems.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/itinerary'),
+      onPress: () => router.navigate('/(tabs)/(subscreens)/itinerary'),
     },
     {
       icon: 'checkbox' as const,
@@ -108,7 +115,7 @@ export default function HomeScreen() {
       iconBg: Colors.success + '15',
       name: '行李清单',
       desc: `${plan.packingItems.filter(i => i.packed).length}/${plan.packingItems.length} 已打包`,
-      onPress: () => router.push('/(tabs)/(subscreens)/packing'),
+      onPress: () => router.navigate('/(tabs)/(subscreens)/packing'),
     },
     {
       icon: 'document' as const,
@@ -117,7 +124,7 @@ export default function HomeScreen() {
       name: '证件管理',
       desc: `${plan.documents.length} 个证件`,
       count: plan.documents.length,
-      onPress: () => router.push('/(tabs)/(subscreens)/documents'),
+      onPress: () => router.navigate('/(tabs)/(subscreens)/documents'),
     },
   ];
 
@@ -172,15 +179,11 @@ export default function HomeScreen() {
         animationType="fade"
         onRequestClose={() => setChatOpen(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setChatOpen(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-              <View style={styles.chatContainer}>
-                <ChatPanel visible={true} onClose={() => setChatOpen(false)} />
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
+        <Pressable style={styles.modalOverlay} onPress={() => setChatOpen(false)}>
+          <Pressable style={styles.chatContainer} onPress={() => {}}>
+            <ChatPanel visible={true} onClose={() => setChatOpen(false)} />
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     width: '90%',
-    height: '70%',
-    maxHeight: 500,
+    height: 500,
+    maxHeight: '80%',
   },
 });

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
 import { BackHeader } from '../../../src/components/BackHeader';
@@ -7,12 +7,18 @@ import { ScoreBar } from '../../../src/components/ScoreBar';
 import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
+import { Destination } from '../../../src/store/types';
 
 const DEST_CRITERIA = ['景色', '文化', '美食', '交通便利', '安全性', '性价比'];
 
 export default function DestinationsScreen() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, getActivePlan } = useApp();
   const { visible, message, showToast, hideToast } = useToast();
+  const plan = getActivePlan();
+  const [editItem, setEditItem] = useState<Destination | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   const handleToggleDest = (id: number) => {
     dispatch({ type: 'TOGGLE_DEST', payload: id });
@@ -31,20 +37,53 @@ export default function DestinationsScreen() {
     showToast('已添加目的地');
   };
 
+  const handleOpenEdit = (dest: Destination) => {
+    setEditItem(dest);
+    setEditName(dest.name);
+    setEditCountry(dest.country);
+    setEditNotes(dest.notes);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editItem) return;
+    dispatch({
+      type: 'UPDATE_DEST',
+      payload: { ...editItem, name: editName, country: editCountry, notes: editNotes },
+    });
+    setEditItem(null);
+    showToast('目的地已更新');
+  };
+
+  const handleDelete = (id: number) => {
+    Alert.alert('删除目的地', '确定要删除这个目的地吗？', [
+      { text: '取消', style: 'cancel' },
+      { text: '删除', style: 'destructive', onPress: () => {
+        dispatch({ type: 'DELETE_DEST', payload: id });
+        showToast('目的地已删除');
+      }},
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <BackHeader title="目的地选择" />
 
         <Text style={styles.hint}>
-          评估各目的地优缺点
+          点击编辑目的地，长按删除
         </Text>
 
-        {state.destinations.map((dest) => {
+        {plan.destinations.map((dest) => {
           const avg = (dest.scores.reduce((a, b) => a + b, 0) / dest.scores.length).toFixed(1);
 
           return (
-            <View key={dest.id} style={styles.card}>
+            <TouchableOpacity
+              key={dest.id}
+              style={styles.card}
+              onPress={() => handleOpenEdit(dest)}
+              onLongPress={() => handleDelete(dest.id)}
+              activeOpacity={0.7}
+            >
               <View style={styles.cardHeader}>
                 <TouchableOpacity
                   onPress={() => handleToggleDest(dest.id)}
@@ -85,7 +124,7 @@ export default function DestinationsScreen() {
                 <Text style={styles.overallLabel}>综合评分</Text>
                 <Text style={styles.overallScore}>{avg}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
 
@@ -93,6 +132,33 @@ export default function DestinationsScreen() {
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
+
+      {/* 编辑弹窗 */}
+      <Modal visible={!!editItem} transparent animationType="fade">
+        <Pressable style={styles.modalOverlay} onPress={() => setEditItem(null)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <Text style={styles.modalTitle}>编辑目的地</Text>
+
+            <Text style={styles.modalLabel}>名称</Text>
+            <TextInput style={styles.modalInput} value={editName} onChangeText={setEditName} />
+
+            <Text style={styles.modalLabel}>国家</Text>
+            <TextInput style={styles.modalInput} value={editCountry} onChangeText={setEditCountry} />
+
+            <Text style={styles.modalLabel}>备注</Text>
+            <TextInput style={[styles.modalInput, { minHeight: 60 }]} value={editNotes} onChangeText={setEditNotes} multiline />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditItem(null)}>
+                <Text style={styles.modalCancelText}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSave} onPress={handleSaveEdit}>
+                <Text style={styles.modalSaveText}>保存</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -182,5 +248,68 @@ const styles = StyleSheet.create({
     fontSize: Typography.xl,
     fontWeight: Typography.bold,
     color: Colors.coral,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+  },
+  modalTitle: {
+    fontSize: Typography.lg,
+    fontWeight: Typography.bold,
+    marginBottom: Spacing.lg,
+  },
+  modalLabel: {
+    fontSize: Typography.sm,
+    color: Colors.muted,
+    marginBottom: Spacing.xs,
+    fontWeight: Typography.semibold,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: Typography.base,
+    color: Colors.fg,
+    marginBottom: Spacing.sm,
+    backgroundColor: Colors.surface,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  modalCancel: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: Typography.base,
+    color: Colors.fg2,
+  },
+  modalSave: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.sm,
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    fontSize: Typography.base,
+    color: Colors.surface,
+    fontWeight: Typography.semibold,
   },
 });
