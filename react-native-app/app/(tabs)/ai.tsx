@@ -15,7 +15,7 @@ export default function AIScreen() {
       iconBg: Colors.warn + '15',
       title: 'AI 智能策划',
       desc: '输入需求，AI 自动生成旅行计划',
-      onPress: () => router.push('/ai-plan'),
+      onPress: () => router.navigate('/ai-plan'),
     },
     {
       icon: 'settings' as const,
@@ -23,7 +23,7 @@ export default function AIScreen() {
       iconBg: Colors.teal + '15',
       title: 'AI 设置',
       desc: '配置 AI 服务商、模型和 API Key',
-      onPress: () => router.push('/ai-settings'),
+      onPress: () => router.navigate('/ai-settings'),
     },
   ];
 

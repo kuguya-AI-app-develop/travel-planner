@@ -13,15 +13,15 @@ export default function BudgetScreen() {
   const { visible, message, showToast, hideToast } = useToast();
   const plan = getActivePlan();
 
-  const selectedFlights = state.flights.filter(f => f.selected);
+  const selectedFlights = plan.flights.filter(f => f.selected);
   const flightTotal = selectedFlights.reduce((s, f) => s + f.price, 0);
-  const selectedHotels = state.hotels.filter(h => h.selected);
+  const selectedHotels = plan.hotels.filter(h => h.selected);
   const hotelTotal = selectedHotels.reduce((s, h) => s + h.priceNum, 0);
-  const selectedExpenses = state.expenses.filter(e => e.selected);
+  const selectedExpenses = plan.expenses.filter(e => e.selected);
   const expenseTotal = selectedExpenses.reduce((s, e) => s + e.amount, 0);
   const total = flightTotal + hotelTotal + expenseTotal;
 
-  const selectedDests = state.destinations.filter(d => d.selected);
+  const selectedDests = plan.destinations.filter(d => d.selected);
 
   const handleToggleCheck = (id: number) => {
     dispatch({ type: 'TOGGLE_CHECK', payload: id });
@@ -92,7 +92,7 @@ export default function BudgetScreen() {
             <Text style={styles.sectionTitle}>待办清单</Text>
           </View>
           <Checklist
-            items={state.checklistItems}
+            items={plan.checklistItems}
             onToggle={handleToggleCheck}
             onAdd={handleAddCheck}
           />

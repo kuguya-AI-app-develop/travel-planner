@@ -12,7 +12,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { saveAISettings, loadAISettings } from '../../../src/utils/secureStorage';
+import { saveAISettings, loadAISettings, clearAISettings } from '../../../src/utils/secureStorage';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { BackHeader } from '../../../src/components/BackHeader';
 import { Toast } from '../../../src/components/Toast';
@@ -22,6 +22,7 @@ const PROVIDERS = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'mimo', label: '小米 MiMo' },
   { value: 'zhipu', label: '智谱 (GLM)' },
   { value: 'moonshot', label: 'Moonshot (Kimi)' },
   { value: 'qwen', label: '通义千问' },
@@ -33,9 +34,20 @@ const MODELS: Record<string, string[]> = {
   openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
   anthropic: ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001', 'claude-opus-4-20250514'],
   deepseek: ['deepseek-chat', 'deepseek-coder'],
+  mimo: ['mimo-v2.5', 'mimo-v2.5-pro', 'mimo-v2-pro', 'mimo-v2-omni', 'mimo-v2.5-asr', 'mimo-v2-tts', 'mimo-v2.5-tts', 'mimo-v2.5-tts-voiceclone', 'mimo-v2.5-tts-voicedesign'],
   zhipu: ['glm-4', 'glm-4-flash'],
   moonshot: ['moonshot-v1-8k', 'moonshot-v1-32k'],
   qwen: ['qwen-turbo', 'qwen-plus', 'qwen-max'],
+};
+
+// 各服务商默认 Base URL
+const PROVIDER_DEFAULT_BASE_URL: Record<string, string> = {
+  openai: 'https://api.openai.com/v1',
+  deepseek: 'https://api.deepseek.com/v1',
+  mimo: 'https://token-plan-cn.xiaomimimo.com/v1',
+  zhipu: 'https://open.bigmodel.cn/api/paas/v4',
+  moonshot: 'https://api.moonshot.cn/v1',
+  qwen: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
 };
 
 // 需要自定义模型输入的 provider
@@ -82,7 +94,11 @@ export default function AISettingsScreen() {
         }
       }
       if (settings.apiKey) setApiKey(settings.apiKey);
-      if (settings.baseUrl) setBaseUrl(settings.baseUrl);
+      if (settings.baseUrl) {
+        setBaseUrl(settings.baseUrl);
+      } else if (settings.provider && PROVIDER_DEFAULT_BASE_URL[settings.provider]) {
+        setBaseUrl(PROVIDER_DEFAULT_BASE_URL[settings.provider]);
+      }
     } catch (e) {
       console.log('Failed to load settings:', e);
     } finally {
@@ -98,6 +114,11 @@ export default function AISettingsScreen() {
       const models = MODELS[newProvider] || [];
       setModel(models[0] || '');
     }
+    // 有预设 Base URL 的服务商自动填充
+    const defaultUrl = PROVIDER_DEFAULT_BASE_URL[newProvider];
+    if (defaultUrl) {
+      setBaseUrl(defaultUrl);
+    }
   };
 
   const handleSave = async () => {
@@ -105,6 +126,11 @@ export default function AISettingsScreen() {
 
     if (!finalModel) {
       Alert.alert('提示', '请输入或选择模型名称。', [{ text: '确定' }]);
+      return;
+    }
+
+    if (!baseUrl.trim()) {
+      Alert.alert('提示', '请输入 API Base URL。', [{ text: '确定' }]);
       return;
     }
 
@@ -134,6 +160,34 @@ export default function AISettingsScreen() {
         [{ text: '确定' }]
       );
     }
+  };
+
+  const handleClearSettings = async () => {
+    Alert.alert(
+      '清除设置',
+      '确定要清除所有 AI 设置吗？包括 API Key、服务商和模型配置都将被删除。',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确定清除',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearAISettings();
+              setApiKey('');
+              setProvider('openai');
+              setModel('gpt-4o');
+              setBaseUrl('');
+              setCustomModel('');
+              setTestStatus('idle');
+              showToast('设置已清除');
+            } catch (e) {
+              Alert.alert('清除失败', '无法清除设置，请重试。', [{ text: '确定' }]);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleTestConnection = async () => {
@@ -272,7 +326,7 @@ export default function AISettingsScreen() {
               <Text style={styles.errorText}>API Key格式不正确</Text>
             )}
 
-            <Text style={styles.label}>API Base URL（可选）</Text>
+            <Text style={styles.label}>API Base URL <Text style={styles.required}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={baseUrl}
@@ -328,12 +382,34 @@ export default function AISettingsScreen() {
             <Text style={styles.infoTitle}>安全提示</Text>
           </View>
           <Text style={styles.infoText}>
-            • API Key将存储在设备本地{'\n'}
-            • 请勿将API Key分享给他人{'\n'}
-            • 建议定期更换API Key{'\n'}
+            • API Key 使用系统级加密存储（iOS Keychain / Android Keystore）{'\n'}
+            • 请勿将 API Key 分享给他人{'\n'}
+            • 建议定期更换 API Key{'\n'}
             • 如有异常使用请立即重置
           </Text>
         </View>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <Ionicons name="shield-checkmark" size={20} color={Colors.accent} />
+            <Text style={styles.infoTitle}>数据持久化</Text>
+          </View>
+          <Text style={styles.infoText}>
+            • API Key 存储在系统安全区域，清除应用缓存不会影响{'\n'}
+            • iOS 设备：数据随 Keychain 保留，卸载重装后仍在{'\n'}
+            • Android 设备：清除应用数据会删除所有设置{'\n'}
+            • 更换设备后需要重新配置 API Key
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={handleClearSettings}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+          <Text style={styles.clearButtonText}>清除所有 AI 设置</Text>
+        </TouchableOpacity>
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
@@ -458,6 +534,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.xs,
     fontWeight: Typography.semibold,
+  },
+  required: {
+    color: Colors.danger,
   },
   pickerContainer: {
     flexDirection: 'row',
@@ -588,6 +667,24 @@ const styles = StyleSheet.create({
     fontSize: Typography.sm,
     color: Colors.muted,
     lineHeight: 20,
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.danger + '40',
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.danger + '08',
+  },
+  clearButtonText: {
+    fontSize: Typography.base,
+    color: Colors.danger,
+    fontWeight: Typography.semibold,
   },
   modalOverlay: {
     flex: 1,
