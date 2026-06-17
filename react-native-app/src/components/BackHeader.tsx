@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius } from '../theme';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BackHeaderProps {
   title: string;
@@ -10,9 +11,10 @@ interface BackHeaderProps {
 
 export function BackHeader({ title }: BackHeaderProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.back()}
@@ -31,8 +33,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.md,
   },
   backButton: {
     width: 32,
