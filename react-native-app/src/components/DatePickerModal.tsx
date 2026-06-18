@@ -224,6 +224,14 @@ export function DatePickerModal({
 
           {/* Action Buttons */}
           <View style={styles.actions}>
+            <TouchableOpacity style={styles.todayBtn} onPress={() => {
+              const today = new Date();
+              setSelectedDate(today);
+              setCurrentMonth(today.getMonth());
+              setCurrentYear(today.getFullYear());
+            }} activeOpacity={0.7}>
+              <Text style={styles.todayText}>今天</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.7}>
               <Text style={styles.cancelText}>取消</Text>
             </TouchableOpacity>
@@ -359,6 +367,17 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
+  },
+  todayBtn: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.accent + '15',
+    borderRadius: Radius.sm,
+  },
+  todayText: {
+    fontSize: Typography.md,
+    color: Colors.accent,
+    fontWeight: Typography.semibold,
   },
   cancelBtn: {
     paddingHorizontal: Spacing.lg,

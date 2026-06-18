@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
@@ -8,13 +8,15 @@ import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
 import { ItineraryItem } from '../../../src/store/types';
+import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
+import { ITINERARY, EMPTY_STATE } from '../../../src/constants/strings';
 
 const TYPE_LABELS: Record<string, string> = {
-  sight: '景点',
-  food: '餐饮',
-  transport: '交通',
-  hotel: '住宿',
-  other: '其他',
+  sight: ITINERARY.TYPES.sight,
+  food: ITINERARY.TYPES.food,
+  transport: ITINERARY.TYPES.transport,
+  hotel: ITINERARY.TYPES.hotel,
+  other: ITINERARY.TYPES.other,
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -83,7 +85,7 @@ export default function ItineraryScreen() {
 
   const handleSave = () => {
     if (!editTitle.trim()) {
-      showToast('请输入活动名称');
+      showToast(ITINERARY.TITLE_REQUIRED);
       return;
     }
     if (editItem) {
@@ -99,7 +101,7 @@ export default function ItineraryScreen() {
           notes: editNotes.trim(),
         },
       });
-      showToast('行程已更新');
+      showToast(ITINERARY.EDIT_SUCCESS);
     } else {
       dispatch({
         type: 'ADD_ITINERARY',
@@ -113,16 +115,16 @@ export default function ItineraryScreen() {
           notes: editNotes.trim(),
         },
       });
-      showToast('已添加行程');
+      showToast(ITINERARY.ADD_SUCCESS);
     }
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('删除行程', '确定要删除这个行程项吗？', [
+    Alert.alert(ITINERARY.DELETE_CONFIRM.split('？')[0], ITINERARY.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_ITINERARY', payload: id });
-        showToast('行程已删除');
+        showToast(ITINERARY.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -133,12 +135,12 @@ export default function ItineraryScreen() {
         <BackHeader title="每日行程" />
 
         <Text style={styles.hint}>
-          点击行程项编辑，长按删除
+          {ITINERARY.HINT}
         </Text>
 
         {dates.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>暂无行程安排</Text>
+            <Text style={styles.emptyText}>{EMPTY_STATE.ITINERARY.TEXT}</Text>
           </View>
         ) : (
           dates.map((date) => {
@@ -209,58 +211,74 @@ export default function ItineraryScreen() {
           })
         )}
 
-        <AddButton label="添加行程" onPress={handleOpenAdd} />
+        <AddButton label={ITINERARY.ADD} onPress={handleOpenAdd} />
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 添加/编辑弹窗 */}
-      <Modal visible={!!editItem || editTitle !== ''} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setEditItem(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>{editItem ? '编辑行程' : '添加行程'}</Text>
+      {/* 添加/编辑弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={!!editItem || editTitle !== ''}
+        title={editItem ? ITINERARY.EDIT : ITINERARY.ADD}
+        onCancel={() => setEditItem(null)}
+        onSave={handleSave}
+      >
+        <FormField label={ITINERARY.DATE}>
+          <FormInput
+            value={editDate}
+            onChangeText={setEditDate}
+            placeholder={ITINERARY.DATE_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>日期</Text>
-            <TextInput style={styles.modalInput} value={editDate} onChangeText={setEditDate} placeholder="2026-05-18" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={ITINERARY.TIME}>
+          <FormInput
+            value={editTime}
+            onChangeText={setEditTime}
+            placeholder={ITINERARY.TIME_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>时间</Text>
-            <TextInput style={styles.modalInput} value={editTime} onChangeText={setEditTime} placeholder="09:00" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={ITINERARY.TITLE} required>
+          <FormInput
+            value={editTitle}
+            onChangeText={setEditTitle}
+            placeholder={ITINERARY.TITLE_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>活动名称</Text>
-            <TextInput style={styles.modalInput} value={editTitle} onChangeText={setEditTitle} placeholder="例如：浅草寺" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={ITINERARY.LOCATION}>
+          <FormInput
+            value={editLocation}
+            onChangeText={setEditLocation}
+            placeholder={ITINERARY.LOCATION_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>地点</Text>
-            <TextInput style={styles.modalInput} value={editLocation} onChangeText={setEditLocation} placeholder="选填" placeholderTextColor={Colors.mutedLight} />
-
-            <Text style={styles.modalLabel}>类型</Text>
-            <View style={styles.typeGroup}>
-              {TYPE_OPTIONS.map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeBtn, editType === t && { backgroundColor: TYPE_COLORS[t], borderColor: TYPE_COLORS[t] }]}
-                  onPress={() => setEditType(t)}
-                >
-                  <Text style={[styles.typeBtnText, editType === t && { color: '#fff' }]}>
-                    {TYPE_LABELS[t]}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>备注</Text>
-            <TextInput style={styles.modalInput} value={editNotes} onChangeText={setEditNotes} placeholder="选填" placeholderTextColor={Colors.mutedLight} />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditItem(null)}>
-                <Text style={styles.modalCancelText}>取消</Text>
+        <FormField label={ITINERARY.TYPE}>
+          <View style={styles.typeGroup}>
+            {TYPE_OPTIONS.map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[styles.typeBtn, editType === t && { backgroundColor: TYPE_COLORS[t], borderColor: TYPE_COLORS[t] }]}
+                onPress={() => setEditType(t)}
+              >
+                <Text style={[styles.typeBtnText, editType === t && { color: '#fff' }]}>
+                  {TYPE_LABELS[t]}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSave}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+            ))}
+          </View>
+        </FormField>
+
+        <FormField label={ITINERARY.NOTES}>
+          <FormInput
+            value={editNotes}
+            onChangeText={setEditNotes}
+            placeholder={ITINERARY.NOTES_PLACEHOLDER}
+          />
+        </FormField>
+      </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -371,45 +389,10 @@ const styles = StyleSheet.create({
     fontSize: Typography.xs,
     color: Colors.muted,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
   typeGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
   },
   typeBtn: {
     paddingHorizontal: Spacing.md,
@@ -421,34 +404,5 @@ const styles = StyleSheet.create({
   typeBtnText: {
     fontSize: Typography.sm,
     color: Colors.fg,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg2,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
 });

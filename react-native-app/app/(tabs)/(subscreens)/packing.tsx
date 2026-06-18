@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
@@ -8,6 +8,8 @@ import { ProgressBar } from '../../../src/components/ProgressBar';
 import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
+import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
+import { PACKING } from '../../../src/constants/strings';
 
 export default function PackingScreen() {
   const { getActivePlan, dispatch } = useApp();
@@ -47,25 +49,25 @@ export default function PackingScreen() {
 
   const handleSave = () => {
     if (!inputName.trim()) {
-      showToast('请输入物品名称');
+      showToast(PACKING.NAME_REQUIRED);
       return;
     }
     if (editId !== null) {
       dispatch({ type: 'UPDATE_PACK', payload: { id: editId, name: inputName.trim(), category: inputCategory.trim() || '其他' } });
-      showToast('行李项已更新');
+      showToast(PACKING.EDIT_SUCCESS);
     } else {
       dispatch({ type: 'ADD_PACK', payload: { name: inputName.trim(), category: inputCategory.trim() || '其他' } });
-      showToast('已添加行李项');
+      showToast(PACKING.ADD_SUCCESS);
     }
     setShowAdd(false);
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('删除行李项', '确定要删除这个行李项吗？', [
+    Alert.alert(PACKING.DELETE_CONFIRM.split('？')[0], PACKING.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_PACK', payload: id });
-        showToast('行李项已删除');
+        showToast(PACKING.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -76,7 +78,7 @@ export default function PackingScreen() {
         <BackHeader title="行李清单" />
 
         <Text style={styles.hint}>
-          点击编辑行李项，长按删除
+          {PACKING.HINT}
         </Text>
 
         <ProgressBar current={done} total={total} />
@@ -123,46 +125,34 @@ export default function PackingScreen() {
           );
         })}
 
-        <AddButton label="添加行李项" onPress={handleOpenAdd} />
+        <AddButton label={PACKING.ADD} onPress={handleOpenAdd} />
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 添加/编辑弹窗 */}
-      <Modal visible={showAdd} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowAdd(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>{editId !== null ? '编辑行李项' : '添加行李项'}</Text>
+      {/* 添加/编辑弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={showAdd}
+        title={editId !== null ? PACKING.EDIT : PACKING.ADD}
+        onCancel={() => setShowAdd(false)}
+        onSave={handleSave}
+      >
+        <FormField label={PACKING.NAME} required>
+          <FormInput
+            value={inputName}
+            onChangeText={setInputName}
+            placeholder={PACKING.NAME_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>物品名称</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={inputName}
-              onChangeText={setInputName}
-              placeholder="例如：护照"
-              placeholderTextColor={Colors.mutedLight}
-            />
-
-            <Text style={styles.modalLabel}>分类</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={inputCategory}
-              onChangeText={setInputCategory}
-              placeholder="例如：证件、衣物、电子设备"
-              placeholderTextColor={Colors.mutedLight}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setShowAdd(false)}>
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSave}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <FormField label={PACKING.CATEGORY}>
+          <FormInput
+            value={inputCategory}
+            onChangeText={setInputCategory}
+            placeholder={PACKING.CATEGORY_PLACEHOLDER}
+          />
+        </FormField>
+      </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -231,68 +221,5 @@ const styles = StyleSheet.create({
   itemTextDone: {
     textDecorationLine: 'line-through',
     color: Colors.mutedLight,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg2,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
 });

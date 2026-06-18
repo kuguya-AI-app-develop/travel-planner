@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
 import { BackHeader } from '../../../src/components/BackHeader';
@@ -8,8 +8,8 @@ import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
 import { Flight } from '../../../src/store/types';
-
-const FLIGHT_CRITERIA = ['中转', '行李额度', '准点率', '舒适度'];
+import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
+import { FLIGHT, EMPTY_STATE } from '../../../src/constants/strings';
 
 export default function FlightsScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -23,6 +23,11 @@ export default function FlightsScreen() {
   const [editArr, setEditArr] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editCls, setEditCls] = useState('');
+
+  const isValidTime = (time: string): boolean => {
+    const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    return regex.test(time);
+  };
 
   const handleToggleFlight = (id: number) => {
     dispatch({ type: 'TOGGLE_FLIGHT', payload: id });
@@ -43,7 +48,7 @@ export default function FlightsScreen() {
       notes: {},
     };
     dispatch({ type: 'ADD_FLIGHT', payload: newFlight });
-    showToast('已添加航班');
+    showToast(FLIGHT.ADD_SUCCESS);
   };
 
   const handleOpenEdit = (flight: Flight) => {
@@ -59,6 +64,14 @@ export default function FlightsScreen() {
 
   const handleSaveEdit = () => {
     if (!editItem) return;
+    if (editDep && !isValidTime(editDep)) {
+      showToast(FLIGHT.INVALID_TIME);
+      return;
+    }
+    if (editArr && !isValidTime(editArr)) {
+      showToast(FLIGHT.INVALID_TIME);
+      return;
+    }
     dispatch({
       type: 'UPDATE_FLIGHT',
       payload: {
@@ -73,15 +86,15 @@ export default function FlightsScreen() {
       },
     });
     setEditItem(null);
-    showToast('航班已更新');
+    showToast(FLIGHT.EDIT_SUCCESS);
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('删除航班', '确定要删除这个航班吗？', [
+    Alert.alert(FLIGHT.DELETE_CONFIRM.split('？')[0], FLIGHT.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_FLIGHT', payload: id });
-        showToast('航班已删除');
+        showToast(FLIGHT.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -92,10 +105,16 @@ export default function FlightsScreen() {
         <BackHeader title="机票对比" />
 
         <Text style={styles.hint}>
-          点击编辑航班，长按删除
+          {FLIGHT.HINT}
         </Text>
 
-        {plan.flights.map((flight) => (
+        {plan.flights.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{EMPTY_STATE.FLIGHT.TEXT}</Text>
+            <Text style={styles.emptyHint}>{EMPTY_STATE.FLIGHT.HINT}</Text>
+          </View>
+        ) : (
+          plan.flights.map((flight) => (
           <TouchableOpacity
             key={flight.id}
             style={styles.card}
@@ -135,58 +154,85 @@ export default function FlightsScreen() {
             </View>
 
             <View style={styles.criteria}>
-              {FLIGHT_CRITERIA.map((criteria, index) => (
+              {FLIGHT.CRITERIA.map((criteria, index) => (
                 <Text key={criteria} style={styles.criteriaItem}>
                   {criteria}: {flight.notes[index] || '—'}
                 </Text>
               ))}
             </View>
           </TouchableOpacity>
-        ))}
+        ))
+        )}
 
-        <AddButton label="添加航班" onPress={handleAddFlight} />
+        <AddButton label={FLIGHT.ADD} onPress={handleAddFlight} />
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 编辑弹窗 */}
-      <Modal visible={!!editItem} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setEditItem(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>编辑航班</Text>
+      {/* 编辑弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={!!editItem}
+        title={FLIGHT.EDIT}
+        onCancel={() => setEditItem(null)}
+        onSave={handleSaveEdit}
+      >
+        <FormField label={FLIGHT.AIRLINE}>
+          <FormInput
+            value={editAirline}
+            onChangeText={setEditAirline}
+            placeholder={FLIGHT.AIRLINE_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>航空公司</Text>
-            <TextInput style={styles.modalInput} value={editAirline} onChangeText={setEditAirline} />
+        <FormField label={FLIGHT.CODE}>
+          <FormInput
+            value={editCode}
+            onChangeText={setEditCode}
+            placeholder={FLIGHT.CODE_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>航班号</Text>
-            <TextInput style={styles.modalInput} value={editCode} onChangeText={setEditCode} />
+        <FormField label={FLIGHT.ROUTE}>
+          <FormInput
+            value={editRoute}
+            onChangeText={setEditRoute}
+            placeholder={FLIGHT.ROUTE_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>航线</Text>
-            <TextInput style={styles.modalInput} value={editRoute} onChangeText={setEditRoute} placeholder="出发→到达" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={FLIGHT.DEP_TIME}>
+          <FormInput
+            value={editDep}
+            onChangeText={setEditDep}
+            placeholder={FLIGHT.DEP_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>起飞时间</Text>
-            <TextInput style={styles.modalInput} value={editDep} onChangeText={setEditDep} placeholder="08:30" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={FLIGHT.ARR_TIME}>
+          <FormInput
+            value={editArr}
+            onChangeText={setEditArr}
+            placeholder={FLIGHT.ARR_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>到达时间</Text>
-            <TextInput style={styles.modalInput} value={editArr} onChangeText={setEditArr} placeholder="12:45" placeholderTextColor={Colors.mutedLight} />
+        <FormField label={FLIGHT.PRICE}>
+          <FormInput
+            value={editPrice}
+            onChangeText={setEditPrice}
+            placeholder={FLIGHT.PRICE_PLACEHOLDER}
+            keyboardType="numeric"
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>价格</Text>
-            <TextInput style={styles.modalInput} value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" placeholder="0" placeholderTextColor={Colors.mutedLight} />
-
-            <Text style={styles.modalLabel}>舱位</Text>
-            <TextInput style={styles.modalInput} value={editCls} onChangeText={setEditCls} />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditItem(null)}>
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSaveEdit}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <FormField label={FLIGHT.CLASS}>
+          <FormInput
+            value={editCls}
+            onChangeText={setEditCls}
+            placeholder={FLIGHT.CLASS_PLACEHOLDER}
+          />
+        </FormField>
+      </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -203,6 +249,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
     fontSize: Typography.sm,
     color: Colors.muted,
+  },
+  empty: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: Typography.base,
+    color: Colors.muted,
+    marginBottom: Spacing.xs,
+  },
+  emptyHint: {
+    fontSize: Typography.sm,
+    color: Colors.mutedLight,
   },
   card: {
     backgroundColor: Colors.surfaceCard,
@@ -276,68 +335,5 @@ const styles = StyleSheet.create({
   criteriaItem: {
     fontSize: Typography.xs,
     color: Colors.muted,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg2,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
 });

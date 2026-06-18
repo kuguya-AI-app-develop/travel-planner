@@ -7,6 +7,7 @@ import { Checklist } from '../../src/components/Checklist';
 import { Toast } from '../../src/components/Toast';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { useToast } from '../../src/hooks/useToast';
+import { BUDGET, COMMON } from '../../src/constants/strings';
 
 export default function BudgetScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -34,7 +35,7 @@ export default function BudgetScreen() {
       done: false,
     };
     dispatch({ type: 'ADD_CHECK', payload: newItem });
-    showToast('已添加待办事项');
+    showToast(COMMON.ADD + '待办事项');
   };
 
   return (
@@ -47,24 +48,24 @@ export default function BudgetScreen() {
 
         <View style={styles.summaryGrid}>
           <SummaryCard
-            label="总费用"
+            label={BUDGET.TOTAL}
             value={`¥${total.toLocaleString()}`}
             color="accent"
           />
           <SummaryCard
-            label="机票"
+            label={BUDGET.FLIGHT}
             value={`¥${flightTotal.toLocaleString()}`}
             note={`${selectedFlights.length} 个航班`}
             color="success"
           />
           <SummaryCard
-            label="酒店"
+            label={BUDGET.HOTEL}
             value={`¥${hotelTotal.toLocaleString()}`}
             note={`${selectedHotels.length} 家酒店`}
             color="warn"
           />
           <SummaryCard
-            label="其他消费"
+            label={BUDGET.EXPENSE}
             value={`¥${expenseTotal.toLocaleString()}`}
             note={`${selectedExpenses.length} 项`}
             color="coral"
@@ -74,7 +75,7 @@ export default function BudgetScreen() {
         {selectedDests.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>已选目的地</Text>
+              <Text style={styles.sectionTitle}>{BUDGET.SELECTED_DEST}</Text>
             </View>
             {selectedDests.map((dest) => (
               <View key={dest.id} style={styles.destItem}>
@@ -89,7 +90,7 @@ export default function BudgetScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>待办清单</Text>
+            <Text style={styles.sectionTitle}>{BUDGET.CHECKLIST}</Text>
           </View>
           <Checklist
             items={plan.checklistItems}
@@ -110,23 +111,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bgDeep,
-  },
-  header: {
-    paddingTop: 60, // 固定值，确保在刘海屏等设备上有足够间距
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  title: {
-    fontFamily: Typography.display,
-    fontSize: Typography['4xl'],
-    fontWeight: Typography.extrabold,
-    letterSpacing: -0.03,
-    color: Colors.fg,
-  },
-  subtitle: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginTop: Spacing.xs,
   },
   summaryGrid: {
     flexDirection: 'row',

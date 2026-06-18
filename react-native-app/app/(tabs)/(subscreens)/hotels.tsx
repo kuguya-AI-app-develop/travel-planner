@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
 import { BackHeader } from '../../../src/components/BackHeader';
@@ -9,8 +9,8 @@ import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
 import { Hotel } from '../../../src/store/types';
-
-const HOTEL_CRITERIA = ['性价比', '位置', '卫生', '设施', '服务'];
+import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
+import { HOTEL, EMPTY_STATE } from '../../../src/constants/strings';
 
 export default function HotelsScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -39,12 +39,12 @@ export default function HotelsScreen() {
       location: '位置',
       price: '¥0/晚',
       priceNum: 0,
-      scores: HOTEL_CRITERIA.map(() => 3),
+      scores: HOTEL.CRITERIA.map(() => 3),
       selected: false,
       status: 'pending' as const,
     };
     dispatch({ type: 'ADD_HOTEL', payload: newHotel });
-    showToast('已添加酒店');
+    showToast(HOTEL.ADD_SUCCESS);
   };
 
   const handleOpenEdit = (hotel: Hotel) => {
@@ -68,15 +68,15 @@ export default function HotelsScreen() {
       },
     });
     setEditItem(null);
-    showToast('酒店已更新');
+    showToast(HOTEL.EDIT_SUCCESS);
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('删除酒店', '确定要删除这个酒店吗？', [
+    Alert.alert(HOTEL.DELETE_CONFIRM.split('？')[0], HOTEL.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_HOTEL', payload: id });
-        showToast('酒店已删除');
+        showToast(HOTEL.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -87,10 +87,16 @@ export default function HotelsScreen() {
         <BackHeader title="酒店评分" />
 
         <Text style={styles.hint}>
-          点击酒店名称编辑，长按删除，点击星星评分
+          {HOTEL.HINT}
         </Text>
 
-        {plan.hotels.map((hotel) => {
+        {plan.hotels.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{EMPTY_STATE.HOTEL.TEXT}</Text>
+            <Text style={styles.emptyHint}>{EMPTY_STATE.HOTEL.HINT}</Text>
+          </View>
+        ) : (
+          plan.hotels.map((hotel) => {
           const avg = (hotel.scores.reduce((a, b) => a + b, 0) / hotel.scores.length).toFixed(1);
 
           return (
@@ -127,7 +133,7 @@ export default function HotelsScreen() {
               </View>
 
               <View style={styles.ratings}>
-                {HOTEL_CRITERIA.map((criteria, index) => (
+                {HOTEL.CRITERIA.map((criteria, index) => (
                   <View key={criteria} style={styles.ratingRow}>
                     <Text style={styles.ratingLabel}>{criteria}</Text>
                     <StarRating
@@ -139,44 +145,51 @@ export default function HotelsScreen() {
               </View>
 
               <View style={styles.overall}>
-                <Text style={styles.overallLabel}>综合评分</Text>
+                <Text style={styles.overallLabel}>{HOTEL.OVERALL_SCORE}</Text>
                 <Text style={styles.overallScore}>{avg}</Text>
               </View>
             </View>
           );
-        })}
+        })
+        )}
 
-        <AddButton label="添加酒店" onPress={handleAddHotel} />
+        <AddButton label={HOTEL.ADD} onPress={handleAddHotel} />
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 编辑弹窗 */}
-      <Modal visible={!!editItem} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setEditItem(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>编辑酒店</Text>
+      {/* 编辑弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={!!editItem}
+        title={HOTEL.EDIT}
+        onCancel={() => setEditItem(null)}
+        onSave={handleSaveEdit}
+      >
+        <FormField label={HOTEL.NAME}>
+          <FormInput
+            value={editName}
+            onChangeText={setEditName}
+            placeholder={HOTEL.NAME_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>酒店名称</Text>
-            <TextInput style={styles.modalInput} value={editName} onChangeText={setEditName} />
+        <FormField label={HOTEL.LOCATION}>
+          <FormInput
+            value={editLocation}
+            onChangeText={setEditLocation}
+            placeholder={HOTEL.LOCATION_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>位置</Text>
-            <TextInput style={styles.modalInput} value={editLocation} onChangeText={setEditLocation} />
-
-            <Text style={styles.modalLabel}>价格（每晚）</Text>
-            <TextInput style={styles.modalInput} value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" placeholder="0" placeholderTextColor={Colors.mutedLight} />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditItem(null)}>
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSaveEdit}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <FormField label={HOTEL.PRICE}>
+          <FormInput
+            value={editPrice}
+            onChangeText={setEditPrice}
+            placeholder={HOTEL.PRICE_PLACEHOLDER}
+            keyboardType="numeric"
+          />
+        </FormField>
+      </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -193,6 +206,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
     fontSize: Typography.sm,
     color: Colors.muted,
+  },
+  empty: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: Typography.base,
+    color: Colors.muted,
+    marginBottom: Spacing.xs,
+  },
+  emptyHint: {
+    fontSize: Typography.sm,
+    color: Colors.mutedLight,
   },
   card: {
     backgroundColor: Colors.surfaceCard,
@@ -282,68 +308,5 @@ const styles = StyleSheet.create({
     fontSize: Typography.xl,
     fontWeight: Typography.bold,
     color: Colors.gold,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg2,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
 });

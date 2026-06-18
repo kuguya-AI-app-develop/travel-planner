@@ -11,6 +11,7 @@ import { Toast } from '../../src/components/Toast';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { useToast } from '../../src/hooks/useToast';
 import { useRouter } from 'expo-router';
+import { PLAN, BUDGET, COMMON } from '../../src/constants/strings';
 
 export default function HomeScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -38,20 +39,20 @@ export default function HomeScreen() {
   // 计算待办完成
   const doneCount = checklistItems.filter(i => i.done).length;
   const totalCount = checklistItems.length;
-  const donePercent = Math.round(doneCount / totalCount * 100);
+  const donePercent = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
 
   const handlePlanSelect = (planId: string) => {
     dispatch({ type: 'SELECT_PLAN', payload: planId });
-    showToast('已切换到：' + state.plans[planId].name);
+    showToast(PLAN.SWITCH_SUCCESS.replace('{name}', state.plans[planId].name));
   };
 
   const handleCreatePlan = () => {
     const id = 'plan-' + (Object.keys(state.plans).length + 1);
     dispatch({
       type: 'CREATE_PLAN',
-      payload: { id, name: '新计划 ' + (Object.keys(state.plans).length + 1) },
+      payload: { id, name: PLAN.NEW_PLAN.replace('{count}', String(Object.keys(state.plans).length + 1)) },
     });
-    showToast('已创建新计划');
+    showToast(PLAN.CREATE_SUCCESS);
   };
 
   const tools = [
@@ -143,7 +144,7 @@ export default function HomeScreen() {
 
         <View style={styles.summaryGrid}>
           <SummaryCard
-            label="总预算"
+            label={BUDGET.TOTAL}
             value={`¥${total.toLocaleString()}`}
             note="机票+酒店+消费"
             color="accent"
@@ -176,7 +177,7 @@ export default function HomeScreen() {
       <Modal
         visible={chatOpen}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setChatOpen(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setChatOpen(false)}>
@@ -195,23 +196,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bgDeep,
-  },
-  header: {
-    paddingTop: 60, // 固定值，确保在刘海屏等设备上有足够间距
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  title: {
-    fontFamily: Typography.display,
-    fontSize: Typography['4xl'],
-    fontWeight: Typography.extrabold,
-    letterSpacing: -0.03,
-    color: Colors.fg,
-  },
-  subtitle: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginTop: Spacing.xs,
   },
   summaryGrid: {
     flexDirection: 'row',
@@ -240,12 +224,14 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   chatContainer: {
-    width: '90%',
-    height: 500,
-    maxHeight: '80%',
+    width: '100%',
+    height: '85%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
   },
 });

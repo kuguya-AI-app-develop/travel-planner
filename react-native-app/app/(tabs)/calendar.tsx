@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity, TextInput, Modal, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../../src/theme';
 import { useApp } from '../../src/store/AppContext';
@@ -10,6 +10,8 @@ import { Toast } from '../../src/components/Toast';
 import { useToast } from '../../src/hooks/useToast';
 import { Trip } from '../../src/store/types';
 import { DatePickerModal } from '../../src/components/DatePickerModal';
+import { CommonModal, FormField, FormInput } from '../../src/components/CommonModal';
+import { TRIP, EMPTY_STATE } from '../../src/constants/strings';
 
 export default function CalendarScreen() {
   const { getActivePlan, dispatch } = useApp();
@@ -33,16 +35,31 @@ export default function CalendarScreen() {
   const [selectedDayDate, setSelectedDayDate] = useState('');
 
   const isValidDate = (dateStr: string): boolean => {
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    // 支持 YYYY-MM-DD 和 YYYY/MM/DD 格式
+    const regex = /^\d{4}[-/]\d{2}[-/]\d{2}$/;
     if (!regex.test(dateStr)) return false;
-    const date = new Date(dateStr);
+    // 统一转换为 YYYY-MM-DD 格式进行验证
+    const normalizedDate = dateStr.replace(/\//g, '-');
+    const date = new Date(normalizedDate);
     return !isNaN(date.getTime());
   };
 
-  // 过滤掉无效日期的行程
-  const validTrips = plan.trips.filter(trip => {
-    return isValidDate(trip.start) && isValidDate(trip.end) && trip.start <= trip.end;
-  });
+  // 标准化日期格式为 YYYY-MM-DD
+  const normalizeDate = (dateStr: string): string => {
+    return dateStr.replace(/\//g, '-');
+  };
+
+  // 过滤掉无效日期的行程，并标准化日期格式
+  const validTrips = plan.trips
+    .filter(trip => {
+      return isValidDate(trip.start) && isValidDate(trip.end);
+    })
+    .map(trip => ({
+      ...trip,
+      start: normalizeDate(trip.start),
+      end: normalizeDate(trip.end),
+    }))
+    .filter(trip => trip.start <= trip.end);
 
   // 统计脏数据数量
   const dirtyTripsCount = plan.trips.length - validTrips.length;
@@ -50,12 +67,12 @@ export default function CalendarScreen() {
   // 清理脏数据
   const handleCleanDirtyData = () => {
     if (dirtyTripsCount === 0) {
-      showToast('没有需要清理的数据');
+      showToast(TRIP.NO_DATA_TO_CLEAN);
       return;
     }
     Alert.alert(
-      '清理脏数据',
-      `确定要删除 ${dirtyTripsCount} 条无效日期的行程吗？此操作不可恢复。`,
+      TRIP.CLEAN_DIRTY_DATA.replace('{count}', String(dirtyTripsCount)).split('？')[0],
+      TRIP.CLEAN_DIRTY_DATA.replace('{count}', String(dirtyTripsCount)),
       [
         { text: '取消', style: 'cancel' },
         {
@@ -69,7 +86,7 @@ export default function CalendarScreen() {
             invalidTrips.forEach(trip => {
               dispatch({ type: 'DELETE_TRIP', payload: trip.id });
             });
-            showToast(`已清理 ${invalidTrips.length} 条无效数据`);
+            showToast(TRIP.CLEAN_SUCCESS.replace('{count}', String(invalidTrips.length)));
           }
         },
       ]
@@ -149,11 +166,11 @@ export default function CalendarScreen() {
 
   const handleSaveTrip = () => {
     if (!editName.trim()) {
-      showToast('请输入行程名称');
+      showToast(TRIP.NAME_REQUIRED);
       return;
     }
     if (!editStart || !editEnd) {
-      showToast('请选择行程日期');
+      showToast(TRIP.DATE_REQUIRED);
       return;
     }
     if (editTrip) {
@@ -167,7 +184,7 @@ export default function CalendarScreen() {
           color: editColor,
         },
       });
-      showToast('行程已更新');
+      showToast(TRIP.EDIT_SUCCESS);
     } else {
       dispatch({
         type: 'ADD_TRIP',
@@ -179,15 +196,15 @@ export default function CalendarScreen() {
           color: editColor,
         },
       });
-      showToast('已添加行程');
+      showToast(TRIP.ADD_SUCCESS);
     }
     setShowModal(false);
   };
 
   const handleDeleteTrip = (tripId: number) => {
     Alert.alert(
-      '确认删除',
-      '确定要删除这个行程吗？',
+      TRIP.DELETE_CONFIRM.split('？')[0],
+      TRIP.DELETE_CONFIRM,
       [
         { text: '取消', style: 'cancel' },
         {
@@ -195,7 +212,7 @@ export default function CalendarScreen() {
           style: 'destructive',
           onPress: () => {
             dispatch({ type: 'DELETE_TRIP', payload: tripId });
-            showToast('行程已删除');
+            showToast(TRIP.DELETE_SUCCESS);
           }
         },
       ]
@@ -234,105 +251,95 @@ export default function CalendarScreen() {
         {dirtyTripsCount > 0 && (
           <TouchableOpacity style={styles.cleanButton} onPress={handleCleanDirtyData}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Text style={styles.cleanButtonText}>清理 {dirtyTripsCount} 条无效数据</Text>
+            <Text style={styles.cleanButtonText}>
+              {TRIP.CLEAN_DIRTY_DATA.replace('{count}', String(dirtyTripsCount))}
+            </Text>
           </TouchableOpacity>
         )}
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 添加/编辑行程弹窗 */}
-      <Modal visible={showModal} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowModal(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>{editTrip ? '编辑行程' : '添加行程'}</Text>
+      {/* 添加/编辑行程弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={showModal}
+        title={editTrip ? TRIP.EDIT : TRIP.ADD}
+        onCancel={() => setShowModal(false)}
+        onSave={handleSaveTrip}
+      >
+        <FormField label={TRIP.NAME} required>
+          <FormInput
+            value={editName}
+            onChangeText={setEditName}
+            placeholder={TRIP.NAME_PLACEHOLDER}
+          />
+        </FormField>
 
-            <Text style={styles.modalLabel}>行程名称</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={editName}
-              onChangeText={setEditName}
-              placeholder="例如：东京·北海道之旅"
-              placeholderTextColor={Colors.mutedLight}
-            />
+        <FormField label={TRIP.START_DATE}>
+          <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('start')}>
+            <Text style={[styles.dateText, !editStart && styles.datePlaceholder]}>
+              {editStart || getTodayStr()}
+            </Text>
+            <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
+          </TouchableOpacity>
+        </FormField>
 
-            <Text style={styles.modalLabel}>开始日期</Text>
-            <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('start')}>
-              <Text style={[styles.dateText, !editStart && styles.datePlaceholder]}>
-                {editStart || getTodayStr()}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
-            </TouchableOpacity>
+        <FormField label={TRIP.END_DATE}>
+          <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('end')}>
+            <Text style={[styles.dateText, !editEnd && styles.datePlaceholder]}>
+              {editEnd || getTodayStr()}
+            </Text>
+            <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
+          </TouchableOpacity>
+        </FormField>
 
-            <Text style={styles.modalLabel}>结束日期</Text>
-            <TouchableOpacity style={styles.dateInput} onPress={() => openDatePicker('end')}>
-              <Text style={[styles.dateText, !editEnd && styles.datePlaceholder]}>
-                {editEnd || getTodayStr()}
-              </Text>
-              <Ionicons name="calendar-outline" size={16} color={Colors.muted} />
-            </TouchableOpacity>
-
-            <Text style={styles.modalLabel}>颜色</Text>
-            <View style={styles.colorGroup}>
-              {['#D4A853', '#E85D4A', '#5AA85A', '#4A90E8', '#B8903A'].map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorBtn,
-                    { backgroundColor: color },
-                    editColor === color && styles.colorBtnSelected,
-                  ]}
-                  onPress={() => setEditColor(color)}
-                />
-              ))}
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setShowModal(false)}>
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSaveTrip}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <FormField label={TRIP.COLOR}>
+          <View style={styles.colorGroup}>
+            {['#D4A853', '#E85D4A', '#5AA85A', '#4A90E8', '#B8903A'].map((color) => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.colorBtn,
+                  { backgroundColor: color },
+                  editColor === color && styles.colorBtnSelected,
+                ]}
+                onPress={() => setEditColor(color)}
+              />
+            ))}
+          </View>
+        </FormField>
+      </CommonModal>
 
       {/* 显示某一天所有行程的弹窗 */}
-      <Modal visible={showDayTripsModal} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowDayTripsModal(false)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>{selectedDayDate} 的行程</Text>
-
-            <ScrollView style={styles.tripsList} showsVerticalScrollIndicator={false}>
-              {selectedDayTrips.map((trip) => (
-                <TouchableOpacity
-                  key={trip.id}
-                  style={styles.tripItem}
-                  onPress={() => {
-                    setShowDayTripsModal(false);
-                    handleEditTrip(trip);
-                  }}
-                >
-                  <View style={[styles.tripColorIndicator, { backgroundColor: trip.color }]} />
-                  <View style={styles.tripItemContent}>
-                    <Text style={styles.tripItemName}>{trip.name}</Text>
-                    <Text style={styles.tripItemDate}>{trip.start} ~ {trip.end}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setShowDayTripsModal(false)}>
-                <Text style={styles.modalCancelText}>关闭</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <CommonModal
+        visible={showDayTripsModal}
+        title={TRIP.DAY_TRIPS.replace('{date}', selectedDayDate)}
+        onCancel={() => setShowDayTripsModal(false)}
+        onSave={() => setShowDayTripsModal(false)}
+        saveText="关闭"
+        cancelText=""
+        scrollView={false}
+      >
+        <ScrollView style={styles.tripsList} showsVerticalScrollIndicator={false}>
+          {selectedDayTrips.map((trip) => (
+            <TouchableOpacity
+              key={trip.id}
+              style={styles.tripItem}
+              onPress={() => {
+                setShowDayTripsModal(false);
+                handleEditTrip(trip);
+              }}
+            >
+              <View style={[styles.tripColorIndicator, { backgroundColor: trip.color }]} />
+              <View style={styles.tripItemContent}>
+                <Text style={styles.tripItemName}>{trip.name}</Text>
+                <Text style={styles.tripItemDate}>{trip.start} ~ {trip.end}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.muted} />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </CommonModal>
 
       <DatePickerModal
         visible={showDatePicker}
@@ -353,23 +360,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bgDeep,
   },
-  header: {
-    paddingTop: 60, // 固定值，确保在刘海屏等设备上有足够间距
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  title: {
-    fontFamily: Typography.display,
-    fontSize: Typography['4xl'],
-    fontWeight: Typography.extrabold,
-    letterSpacing: -0.03,
-    color: Colors.fg,
-  },
-  subtitle: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginTop: Spacing.xs,
-  },
   sectionHeader: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
@@ -382,40 +372,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.04,
     textTransform: 'uppercase',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
   dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -426,7 +382,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderRadius: 8,
     backgroundColor: Colors.surface,
-    marginBottom: Spacing.sm,
   },
   dateText: {
     flex: 1,
@@ -439,7 +394,6 @@ const styles = StyleSheet.create({
   colorGroup: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginBottom: Spacing.sm,
   },
   colorBtn: {
     width: 32,
@@ -450,35 +404,6 @@ const styles = StyleSheet.create({
   },
   colorBtnSelected: {
     borderColor: Colors.fg,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
   cleanButton: {
     flexDirection: 'row',

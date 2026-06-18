@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
 import { BackHeader } from '../../../src/components/BackHeader';
@@ -8,8 +8,8 @@ import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
 import { Destination } from '../../../src/store/types';
-
-const DEST_CRITERIA = ['景色', '文化', '美食', '交通便利', '安全性', '性价比'];
+import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
+import { DESTINATION, EMPTY_STATE } from '../../../src/constants/strings';
 
 export default function DestinationsScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -37,11 +37,11 @@ export default function DestinationsScreen() {
       name: '新目的地',
       country: '国家',
       notes: '',
-      scores: DEST_CRITERIA.map(() => 3),
+      scores: DESTINATION.CRITERIA.map(() => 3),
       selected: false,
     };
     dispatch({ type: 'ADD_DEST', payload: newDest });
-    showToast('已添加目的地');
+    showToast(DESTINATION.ADD_SUCCESS);
   };
 
   const handleOpenEdit = (dest: Destination) => {
@@ -58,15 +58,15 @@ export default function DestinationsScreen() {
       payload: { ...editItem, name: editName, country: editCountry, notes: editNotes },
     });
     setEditItem(null);
-    showToast('目的地已更新');
+    showToast(DESTINATION.EDIT_SUCCESS);
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert('删除目的地', '确定要删除这个目的地吗？', [
+    Alert.alert(DESTINATION.DELETE_CONFIRM.split('？')[0], DESTINATION.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_DEST', payload: id });
-        showToast('目的地已删除');
+        showToast(DESTINATION.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -80,7 +80,13 @@ export default function DestinationsScreen() {
           点击编辑目的地，长按删除
         </Text>
 
-        {plan.destinations.map((dest) => {
+        {plan.destinations.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{EMPTY_STATE.DESTINATION.TEXT}</Text>
+            <Text style={styles.emptyHint}>{EMPTY_STATE.DESTINATION.HINT}</Text>
+          </View>
+        ) : (
+          plan.destinations.map((dest) => {
           const avg = (dest.scores.reduce((a, b) => a + b, 0) / dest.scores.length).toFixed(1);
 
           return (
@@ -117,7 +123,7 @@ export default function DestinationsScreen() {
               )}
 
               <View style={styles.ratings}>
-                {DEST_CRITERIA.map((criteria, index) => (
+                {DESTINATION.CRITERIA.map((criteria, index) => (
                   <View key={criteria} style={styles.ratingRow}>
                     <Text style={styles.ratingLabel}>{criteria}</Text>
                     <StarRating
@@ -129,44 +135,44 @@ export default function DestinationsScreen() {
               </View>
 
               <View style={styles.overall}>
-                <Text style={styles.overallLabel}>综合评分</Text>
+                <Text style={styles.overallLabel}>{DESTINATION.OVERALL_SCORE}</Text>
                 <Text style={styles.overallScore}>{avg}</Text>
               </View>
             </TouchableOpacity>
           );
-        })}
+        })
+        )}
 
-        <AddButton label="添加目的地" onPress={handleAddDest} />
+        <AddButton label={DESTINATION.ADD} onPress={handleAddDest} />
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
 
-      {/* 编辑弹窗 */}
-      <Modal visible={!!editItem} transparent animationType="fade">
-        <Pressable style={styles.modalOverlay} onPress={() => setEditItem(null)}>
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <Text style={styles.modalTitle}>编辑目的地</Text>
+      {/* 编辑弹窗 - 使用公共Modal组件 */}
+      <CommonModal
+        visible={!!editItem}
+        title={DESTINATION.EDIT}
+        onCancel={() => setEditItem(null)}
+        onSave={handleSaveEdit}
+      >
+        <FormField label={DESTINATION.NAME}>
+          <FormInput value={editName} onChangeText={setEditName} />
+        </FormField>
 
-            <Text style={styles.modalLabel}>名称</Text>
-            <TextInput style={styles.modalInput} value={editName} onChangeText={setEditName} />
+        <FormField label={DESTINATION.COUNTRY}>
+          <FormInput value={editCountry} onChangeText={setEditCountry} />
+        </FormField>
 
-            <Text style={styles.modalLabel}>国家</Text>
-            <TextInput style={styles.modalInput} value={editCountry} onChangeText={setEditCountry} />
-
-            <Text style={styles.modalLabel}>备注</Text>
-            <TextInput style={[styles.modalInput, { minHeight: 60 }]} value={editNotes} onChangeText={setEditNotes} multiline />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditItem(null)}>
-                <Text style={styles.modalCancelText}>取消</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSaveEdit}>
-                <Text style={styles.modalSaveText}>保存</Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <FormField label={DESTINATION.NOTES}>
+          <FormInput
+            value={editNotes}
+            onChangeText={setEditNotes}
+            placeholder={DESTINATION.NOTES_PLACEHOLDER}
+            multiline
+            numberOfLines={3}
+          />
+        </FormField>
+      </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
     </View>
@@ -183,6 +189,19 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
     fontSize: Typography.sm,
     color: Colors.muted,
+  },
+  empty: {
+    padding: Spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: Typography.base,
+    color: Colors.muted,
+    marginBottom: Spacing.xs,
+  },
+  emptyHint: {
+    fontSize: Typography.sm,
+    color: Colors.mutedLight,
   },
   card: {
     backgroundColor: Colors.surfaceCard,
@@ -267,68 +286,5 @@ const styles = StyleSheet.create({
     fontSize: Typography.xl,
     fontWeight: Typography.bold,
     color: Colors.coral,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-  },
-  modalTitle: {
-    fontSize: Typography.lg,
-    fontWeight: Typography.bold,
-    marginBottom: Spacing.lg,
-  },
-  modalLabel: {
-    fontSize: Typography.sm,
-    color: Colors.muted,
-    marginBottom: Spacing.xs,
-    fontWeight: Typography.semibold,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: Typography.base,
-    color: Colors.fg,
-    marginBottom: Spacing.sm,
-    backgroundColor: Colors.surface,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginTop: Spacing.lg,
-  },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    fontSize: Typography.base,
-    color: Colors.fg2,
-  },
-  modalSave: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-  },
-  modalSaveText: {
-    fontSize: Typography.base,
-    color: Colors.surface,
-    fontWeight: Typography.semibold,
   },
 });

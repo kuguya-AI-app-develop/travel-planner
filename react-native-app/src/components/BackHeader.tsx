@@ -7,17 +7,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BackHeaderProps {
   title: string;
+  onBack?: () => void;
 }
 
-export function BackHeader({ title }: BackHeaderProps) {
+export function BackHeader({ title, onBack }: BackHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      // 直接导航到首页，避免返回到子页面列表
+      router.navigate('/');
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + Spacing.sm }]}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={handleBack}
         activeOpacity={0.7}
       >
         <Ionicons name="chevron-back" size={18} color={Colors.fg2} />
