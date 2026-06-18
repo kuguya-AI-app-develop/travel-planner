@@ -290,3 +290,30 @@ export const EMPTY_STATE = {
     TEXT: '暂无行李项',
   },
 } as const;
+
+// 机票扫描相关
+export const TICKET_SCAN = {
+  SCAN: '扫描机票',
+  SCANNING: '识别中...',
+  SCAN_SUCCESS: '识别成功',
+  SCAN_FAILED: '未能识别到航班信息，请重试',
+  CAMERA_PERMISSION: '需要相机权限才能拍照',
+  LIBRARY_PERMISSION: '需要相册权限才能选择图片',
+  OPEN_SETTINGS: '打开设置',
+  PICK_FROM_LIBRARY: '从相册选择',
+  TAKE_PHOTO: '拍照',
+  CANCEL: '取消',
+  RECOGNIZE: '识别',
+  EDIT_RESULT: '识别结果',
+  ADD_SUCCESS: '已添加航班',
+  AIRLINE: '航空公司',
+  CODE: '航班号',
+  ROUTE: '航线',
+  DEP_TIME: '起飞时间',
+  ARR_TIME: '到达时间',
+  PRICE: '价格',
+  CLASS: '舱位',
+  HINT: '将机票截图对准扫描框',
+  NO_TEXT_FOUND: '未识别到文字内容',
+  PARTIAL_RESULT: '识别到部分信息，请手动补充',
+} as const;

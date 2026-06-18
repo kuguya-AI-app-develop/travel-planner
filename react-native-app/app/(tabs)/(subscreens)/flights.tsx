@@ -9,7 +9,10 @@ import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
 import { Flight } from '../../../src/store/types';
 import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
-import { FLIGHT, EMPTY_STATE } from '../../../src/constants/strings';
+import { FLIGHT, EMPTY_STATE, TICKET_SCAN } from '../../../src/constants/strings';
+import { TicketImagePicker } from '../../../src/components/TicketImagePicker';
+import { TicketScanResult } from '../../../src/components/TicketScanResult';
+import { TicketInfo } from '../../../src/utils/ticketOcr';
 
 export default function FlightsScreen() {
   const { state, dispatch, getActivePlan } = useApp();
@@ -23,6 +26,11 @@ export default function FlightsScreen() {
   const [editArr, setEditArr] = useState('');
   const [editPrice, setEditPrice] = useState('');
   const [editCls, setEditCls] = useState('');
+
+  // 扫描相关状态
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showScanResult, setShowScanResult] = useState(false);
+  const [scannedTicketInfo, setScannedTicketInfo] = useState<TicketInfo | null>(null);
 
   const isValidTime = (time: string): boolean => {
     const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -99,6 +107,40 @@ export default function FlightsScreen() {
     ]);
   };
 
+  // 扫描相关处理函数
+  const handleOpenScanner = () => {
+    setShowImagePicker(true);
+  };
+
+  const handleImagePickerCancel = () => {
+    setShowImagePicker(false);
+  };
+
+  const handleRecognized = (ticketInfo: TicketInfo) => {
+    setShowImagePicker(false);
+    setScannedTicketInfo(ticketInfo);
+    setShowScanResult(true);
+  };
+
+  const handleScanResultCancel = () => {
+    setShowScanResult(false);
+    setScannedTicketInfo(null);
+  };
+
+  const handleScanResultConfirm = (flightData: Omit<Flight, 'id' | 'selected' | 'status' | 'notes'>) => {
+    const newFlight: Flight = {
+      id: Date.now(),
+      ...flightData,
+      status: 'compare' as const,
+      selected: false,
+      notes: {},
+    };
+    dispatch({ type: 'ADD_FLIGHT', payload: newFlight });
+    setShowScanResult(false);
+    setScannedTicketInfo(null);
+    showToast(TICKET_SCAN.ADD_SUCCESS);
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -165,6 +207,14 @@ export default function FlightsScreen() {
         )}
 
         <AddButton label={FLIGHT.ADD} onPress={handleAddFlight} />
+
+        <TouchableOpacity
+          style={styles.scanButton}
+          onPress={handleOpenScanner}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.scanButtonText}>{TICKET_SCAN.SCAN}</Text>
+        </TouchableOpacity>
 
         <View style={{ height: Spacing.xl }} />
       </ScrollView>
@@ -235,6 +285,21 @@ export default function FlightsScreen() {
       </CommonModal>
 
       <Toast visible={visible} message={message} onHide={hideToast} />
+
+      {/* 图片选择器 */}
+      <TicketImagePicker
+        visible={showImagePicker}
+        onCancel={handleImagePickerCancel}
+        onRecognized={handleRecognized}
+      />
+
+      {/* 扫描结果预览 */}
+      <TicketScanResult
+        visible={showScanResult}
+        ticketInfo={scannedTicketInfo}
+        onCancel={handleScanResultCancel}
+        onConfirm={handleScanResultConfirm}
+      />
     </View>
   );
 }
@@ -335,5 +400,21 @@ const styles = StyleSheet.create({
   criteriaItem: {
     fontSize: Typography.xs,
     color: Colors.muted,
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.surfaceCard,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+  },
+  scanButtonText: {
+    fontSize: Typography.base,
+    color: Colors.fg2,
   },
 });
