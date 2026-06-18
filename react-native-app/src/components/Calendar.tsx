@@ -8,14 +8,15 @@ interface CalendarProps {
   trips: Trip[];
   onDateSelect?: (date: string) => void;
   onAddTrip?: () => void;
-  onEditTrip?: (tripId: number) => void;
+  onEditTrip?: (trip: Trip) => void;
   onDeleteTrip?: (tripId: number) => void;
+  onShowMoreTrips?: (trips: Trip[], date: string) => void;
 }
 
 const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 const MONTH_NAMES = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
 
-export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteTrip }: CalendarProps) {
+export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteTrip, onShowMoreTrips }: CalendarProps) {
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
@@ -40,13 +41,18 @@ export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteT
     setCurrentYear(newYear);
   };
 
-  const getTripForDate = (dateStr: string): Trip | null => {
-    for (const trip of trips) {
-      if (dateStr >= trip.start && dateStr <= trip.end) {
-        return trip;
-      }
-    }
-    return null;
+  const isValidDate = (dateStr: string): boolean => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime());
+  };
+
+  const getTripsForDate = (dateStr: string): Trip[] => {
+    return trips.filter(trip => {
+      if (!isValidDate(trip.start) || !isValidDate(trip.end)) return false;
+      return dateStr >= trip.start && dateStr <= trip.end;
+    });
   };
 
   const renderCalendarDays = () => {
@@ -66,13 +72,23 @@ export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteT
       const isToday = currentYear === today.getFullYear() &&
                       currentMonth === today.getMonth() &&
                       day === today.getDate();
-      const trip = getTripForDate(dateStr);
+      const dayTrips = getTripsForDate(dateStr);
+      const hasMultipleTrips = dayTrips.length > 1;
+
+      // 如果有多个行程，点击日期区域打开列表；否则点击日期区域触发日期选择
+      const handleDayPress = () => {
+        if (hasMultipleTrips) {
+          onShowMoreTrips?.(dayTrips, dateStr);
+        } else {
+          onDateSelect?.(dateStr);
+        }
+      };
 
       days.push(
         <TouchableOpacity
           key={`current-${day}`}
           style={[styles.dayCell, isToday && styles.todayCell]}
-          onPress={() => onDateSelect?.(dateStr)}
+          onPress={handleDayPress}
           activeOpacity={0.7}
         >
           <View style={[styles.dateContainer, isToday && styles.todayContainer]}>
@@ -80,24 +96,36 @@ export function Calendar({ trips, onDateSelect, onAddTrip, onEditTrip, onDeleteT
               {day}
             </Text>
           </View>
-          {trip && (
-            <View style={[styles.tripLabel, { backgroundColor: trip.color }]}>
+          {dayTrips.length === 1 && (
+            <TouchableOpacity
+              style={[styles.tripLabel, { backgroundColor: dayTrips[0].color }]}
+              onPress={() => onEditTrip?.(dayTrips[0])}
+              activeOpacity={0.7}
+            >
               <Text style={styles.tripLabelText} numberOfLines={1}>
-                {trip.name}
+                {dayTrips[0].name}
               </Text>
-              <View style={styles.tripActions}>
-                {onEditTrip && (
-                  <TouchableOpacity onPress={() => onEditTrip(trip.id)}>
-                    <Ionicons name="create-outline" size={10} color="#FFF" />
-                  </TouchableOpacity>
-                )}
-                {onDeleteTrip && (
-                  <TouchableOpacity onPress={() => onDeleteTrip(trip.id)}>
-                    <Ionicons name="close" size={10} color="#FFF" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
+              {onDeleteTrip && (
+                <TouchableOpacity
+                  style={styles.deleteBtn}
+                  onPress={() => onDeleteTrip(dayTrips[0].id)}
+                >
+                  <Ionicons name="close" size={8} color="#FFF" />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          )}
+          {hasMultipleTrips && (
+            <TouchableOpacity
+              style={styles.tripsIndicator}
+              onPress={() => onShowMoreTrips?.(dayTrips, dateStr)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.tripsIndicatorText}>
+                {dayTrips.length} 个行程
+              </Text>
+              <Ionicons name="chevron-down" size={10} color={Colors.accent} />
+            </TouchableOpacity>
           )}
         </TouchableOpacity>
       );
@@ -262,11 +290,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tripLabelText: {
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: Typography.semibold,
     color: '#FFFFFF',
     textAlign: 'center',
     flex: 1,
+  },
+  tripsContainer: {
+    flex: 1,
+  },
+  deleteBtn: {
+    padding: 1,
+  },
+  tripsIndicator: {
+    marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    backgroundColor: Colors.accent + '15',
+    borderRadius: 4,
+  },
+  tripsIndicatorText: {
+    fontSize: 8,
+    fontWeight: Typography.semibold,
+    color: Colors.accent,
   },
   addButton: {
     width: 32,

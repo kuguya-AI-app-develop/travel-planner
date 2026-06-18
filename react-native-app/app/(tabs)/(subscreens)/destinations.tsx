@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Pressable, 
 import { Colors, Typography, Spacing, Radius, Shadows } from '../../../src/theme';
 import { useApp } from '../../../src/store/AppContext';
 import { BackHeader } from '../../../src/components/BackHeader';
-import { ScoreBar } from '../../../src/components/ScoreBar';
+import { StarRating } from '../../../src/components/StarRating';
 import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
@@ -22,6 +22,13 @@ export default function DestinationsScreen() {
 
   const handleToggleDest = (id: number) => {
     dispatch({ type: 'TOGGLE_DEST', payload: id });
+  };
+
+  const handleRateDest = (destId: number, critIdx: number, value: number) => {
+    dispatch({
+      type: 'RATE_DEST',
+      payload: { destId, critIdx, value },
+    });
   };
 
   const handleAddDest = () => {
@@ -109,14 +116,15 @@ export default function DestinationsScreen() {
                 <Text style={styles.destNotes}>{dest.notes}</Text>
               )}
 
-              <View style={styles.scores}>
+              <View style={styles.ratings}>
                 {DEST_CRITERIA.map((criteria, index) => (
-                  <ScoreBar
-                    key={criteria}
-                    label={criteria}
-                    score={dest.scores[index]}
-                    color={Colors.coral}
-                  />
+                  <View key={criteria} style={styles.ratingRow}>
+                    <Text style={styles.ratingLabel}>{criteria}</Text>
+                    <StarRating
+                      rating={dest.scores[index]}
+                      onRate={(value) => handleRateDest(dest.id, index, value)}
+                    />
+                  </View>
                 ))}
               </View>
 
@@ -227,9 +235,20 @@ const styles = StyleSheet.create({
     color: Colors.muted,
     marginBottom: Spacing.md,
   },
-  scores: {
+  ratings: {
     gap: Spacing.sm,
     marginBottom: Spacing.md,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  ratingLabel: {
+    minWidth: 28,
+    fontSize: Typography.xs,
+    fontWeight: Typography.medium,
+    color: Colors.muted,
   },
   overall: {
     flexDirection: 'row',

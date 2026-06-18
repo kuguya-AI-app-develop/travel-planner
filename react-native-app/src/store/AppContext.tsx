@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Plan, PlanStatus, Flight, Destination, Hotel, Expense, ChecklistItem, Document, ItineraryItem } from './types';
+import { Plan, PlanStatus, Flight, Destination, Hotel, Expense, ChecklistItem, Document, ItineraryItem, Trip } from './types';
 
 // AI 策划表单状态
 export interface AIPlanFormState {
@@ -60,7 +60,10 @@ type AppAction =
   | { type: 'ADD_ITINERARY'; payload: Omit<ItineraryItem, 'id'> }
   | { type: 'UPDATE_ITINERARY'; payload: ItineraryItem }
   | { type: 'DELETE_ITINERARY'; payload: number }
+  | { type: 'ADD_TRIP'; payload: Trip }
+  | { type: 'UPDATE_TRIP'; payload: Trip }
   | { type: 'DELETE_TRIP'; payload: number }
+  | { type: 'RATE_DEST'; payload: { destId: number; critIdx: number; value: number } }
   | { type: 'UPDATE_AI_PLAN_FORM'; payload: Partial<AIPlanFormState> }
   | { type: 'RESET_AI_PLAN_FORM' }
   | { type: 'APPLY_AI_PLAN'; payload: { itineraryItems: ItineraryItem[]; trip: { name: string; start: string; end: string; color: string } } };
@@ -220,6 +223,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return updateActivePlan(state, p => ({ ...p, destinations: p.destinations.map(d => d.id === action.payload.id ? action.payload : d) }));
     case 'DELETE_DEST':
       return updateActivePlan(state, p => ({ ...p, destinations: p.destinations.filter(d => d.id !== action.payload) }));
+    case 'RATE_DEST':
+      return updateActivePlan(state, p => ({ ...p, destinations: p.destinations.map(d => d.id === action.payload.destId ? { ...d, scores: d.scores.map((s, i) => i === action.payload.critIdx ? action.payload.value : s) } : d) }));
 
     // === Hotels ===
     case 'TOGGLE_HOTEL':
@@ -284,6 +289,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return updateActivePlan(state, p => ({ ...p, itineraryItems: p.itineraryItems.filter(i => i.id !== action.payload) }));
 
     // === Trips ===
+    case 'ADD_TRIP':
+      return updateActivePlan(state, p => ({ ...p, trips: [...p.trips, action.payload] }));
+    case 'UPDATE_TRIP':
+      return updateActivePlan(state, p => ({ ...p, trips: p.trips.map(t => t.id === action.payload.id ? action.payload : t) }));
     case 'DELETE_TRIP':
       return updateActivePlan(state, p => ({ ...p, trips: p.trips.filter(t => t.id !== action.payload) }));
 
