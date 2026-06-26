@@ -29,3 +29,4 @@ dist-ssr
 # Development docs and phases
 coding-docs/
 react-native-app/development-phases/
+*.apk
