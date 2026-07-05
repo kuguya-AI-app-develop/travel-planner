@@ -80,34 +80,38 @@ export const HOTEL = {
   HINT: '点击酒店名称编辑，长按删除，点击星星评分',
 } as const;
 
-// 航班相关
-export const FLIGHT = {
-  ADD: '添加航班',
-  EDIT: '编辑航班',
-  DELETE_CONFIRM: '确定要删除这个航班吗？',
-  ADD_SUCCESS: '已添加航班',
-  EDIT_SUCCESS: '航班已更新',
-  DELETE_SUCCESS: '航班已删除',
-  AIRLINE: '航空公司',
-  CODE: '航班号',
-  ROUTE: '航线',
-  DEP_TIME: '起飞时间',
+// 交通方式相关
+export const TRANSPORT = {
+  ADD: '添加交通方式',
+  EDIT: '编辑交通方式',
+  DELETE_CONFIRM: '确定要删除这个交通方式吗？',
+  ADD_SUCCESS: '已添加',
+  EDIT_SUCCESS: '已更新',
+  DELETE_SUCCESS: '已删除',
+  TYPE: '交通方式',
+  COMPANY: '运营商/航空公司',
+  CODE: '车次/航班号',
+  ROUTE: '路线',
+  DEP_TIME: '出发时间',
   ARR_TIME: '到达时间',
   PRICE: '价格',
-  CLASS: '舱位',
-  AIRLINE_PLACEHOLDER: '输入航空公司',
-  CODE_PLACEHOLDER: 'XX000',
+  CLASS: '舱位/座位类型',
+  COMPANY_PLACEHOLDER: '输入运营商名称',
+  CODE_PLACEHOLDER: 'CA1234 / G1234',
   ROUTE_PLACEHOLDER: '出发→到达',
   DEP_PLACEHOLDER: '08:30',
   ARR_PLACEHOLDER: '12:45',
   PRICE_PLACEHOLDER: '0',
-  CLASS_PLACEHOLDER: '经济舱',
-  NO_DATA: '暂无航班',
-  NO_DATA_HINT: '点击下方按钮添加航班',
-  CRITERIA: ['中转', '行李额度', '准点率', '舒适度'],
+  CLASS_PLACEHOLDER: '经济舱 / 二等座',
+  NO_DATA: '暂无交通方式',
+  NO_DATA_HINT: '点击下方按钮添加交通方式',
+  CRITERIA: ['准点率', '舒适度', '便利性', '性价比'],
   INVALID_TIME: '时间格式无效，请使用 HH:MM 格式',
-  HINT: '点击编辑航班，长按删除',
+  HINT: '点击编辑，长按删除',
 } as const;
+
+// 航班相关（兼容旧代码）
+export const FLIGHT = TRANSPORT;
 
 // 消费相关
 export const EXPENSE = {
@@ -291,12 +295,12 @@ export const EMPTY_STATE = {
   },
 } as const;
 
-// 机票扫描相关
+// 票据扫描相关
 export const TICKET_SCAN = {
-  SCAN: '扫描机票',
+  SCAN: '扫描票据',
   SCANNING: '识别中...',
   SCAN_SUCCESS: '识别成功',
-  SCAN_FAILED: '未能识别到航班信息，请重试',
+  SCAN_FAILED: '未能识别到票据信息，请重试',
   CAMERA_PERMISSION: '需要相机权限才能拍照',
   LIBRARY_PERMISSION: '需要相册权限才能选择图片',
   OPEN_SETTINGS: '打开设置',
@@ -305,15 +309,17 @@ export const TICKET_SCAN = {
   CANCEL: '取消',
   RECOGNIZE: '识别',
   EDIT_RESULT: '识别结果',
-  ADD_SUCCESS: '已添加航班',
-  AIRLINE: '航空公司',
-  CODE: '航班号',
-  ROUTE: '航线',
-  DEP_TIME: '起飞时间',
+  ADD_SUCCESS: '添加',
+  AIRLINE: '航空公司/运营商',
+  CODE: '车次/航班号',
+  ROUTE: '路线',
+  DEP_TIME: '出发时间',
   ARR_TIME: '到达时间',
   PRICE: '价格',
-  CLASS: '舱位',
-  HINT: '将机票截图对准扫描框',
+  CLASS: '舱位/座位类型',
+  HINT: '将票据截图对准扫描框',
   NO_TEXT_FOUND: '未识别到文字内容',
   PARTIAL_RESULT: '识别到部分信息，请手动补充',
+  SUPPORTED_TYPES: '支持识别：机票、高铁票、火车票',
+  SUPPORTED_HINT: '识别内容包括：车次/航班号、出发到达时间、价格、出发地和目的地',
 } as const;

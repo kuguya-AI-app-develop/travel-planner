@@ -114,8 +114,8 @@ const demoPlan: Plan = {
     { id: 1, name: '东京·北海道全景之旅', start: '2026-05-18', end: '2026-05-22', color: '#D4A853' },
   ],
   flights: [
-    { id: 1, airline: '全日空航空', code: 'NH919', route: '上海→东京', dep: '08:30', arr: '12:45', price: 3280, cls: '经济舱', status: 'booked', selected: true, notes: { 0: '直飞', 1: '23kg', 2: '高', 3: '好' } },
-    { id: 2, airline: '春秋航空', code: '9C6215', route: '札幌→上海', dep: '19:00', arr: '21:30', price: 1899, cls: '经济舱', status: 'pending', selected: false, notes: { 0: '直飞', 1: '15kg', 2: '中', 3: '一般' } },
+    { id: 1, type: 'plane' as const, airline: '全日空航空', code: 'NH919', route: '上海→东京', dep: '08:30', arr: '12:45', price: 3280, cls: '经济舱', status: 'booked', selected: true, notes: { 0: '直飞', 1: '23kg', 2: '高', 3: '好' } },
+    { id: 2, type: 'plane' as const, airline: '春秋航空', code: '9C6215', route: '札幌→上海', dep: '19:00', arr: '21:30', price: 1899, cls: '经济舱', status: 'pending', selected: false, notes: { 0: '直飞', 1: '15kg', 2: '中', 3: '一般' } },
   ],
   destinations: [
     { id: 1, name: '东京', country: '日本', notes: '购物天堂，交通便利', scores: [4, 4, 5, 5, 5, 4], selected: true },

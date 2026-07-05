@@ -4,7 +4,7 @@ import { Colors, Typography, Spacing } from '../theme';
 import { CommonModal, FormField, FormInput } from './CommonModal';
 import { TicketInfo, validateTicketInfo } from '../utils/ticketOcr';
 import { TICKET_SCAN } from '../constants/strings';
-import { Flight } from '../store/types';
+import { Flight, TransportType } from '../store/types';
 
 interface TicketScanResultProps {
   visible: boolean;
@@ -40,6 +40,9 @@ export function TicketScanResult({
     }
   }, [ticketInfo]);
 
+  // 获取识别到的交通方式类型
+  const detectedType = ticketInfo?.type || 'plane';
+
   // 验证时间格式
   const isValidTime = (time: string): boolean => {
     if (!time) return true; // 空值是允许的
@@ -59,9 +62,10 @@ export function TicketScanResult({
     if (!isFormValid()) return;
 
     onConfirm({
-      airline: airline.trim() || '未知航空公司',
+      type: detectedType,
+      airline: airline.trim() || '未知',
       code: code.trim() || 'XX000',
-      route: route.trim() || '未知航线',
+      route: route.trim() || '未知',
       dep: dep.trim() || '00:00',
       arr: arr.trim() || '00:00',
       price: Number(price) || 0,

@@ -47,7 +47,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.full,
-    zIndex: 400,
+    zIndex: 9999,
+    elevation: 9999,
   },
   text: {
     color: Colors.bg,

@@ -132,7 +132,8 @@ export function TicketImagePicker({
 
       const ticketInfo = await recognizeTicket(imageUri);
 
-      setStatus('success');
+      // 识别成功后重置状态
+      resetState();
       onRecognized(ticketInfo);
     } catch (err: any) {
       console.error('识别失败:', err);
@@ -151,6 +152,12 @@ export function TicketImagePicker({
       saveDisabled={!imageUri || status === 'recognizing'}
     >
       <View style={styles.container}>
+        {/* 支持类型提示 */}
+        <View style={styles.supportedContainer}>
+          <Text style={styles.supportedText}>{TICKET_SCAN.SUPPORTED_TYPES}</Text>
+          <Text style={styles.supportedHint}>{TICKET_SCAN.SUPPORTED_HINT}</Text>
+        </View>
+
         {/* 图片预览区域 */}
         <TouchableOpacity
           style={styles.imageContainer}
@@ -190,6 +197,26 @@ export function TicketImagePicker({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+  },
+  supportedContainer: {
+    width: '100%',
+    padding: Spacing.md,
+    backgroundColor: Colors.bgDeep,
+    borderRadius: Radius.sm,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  supportedText: {
+    fontSize: Typography.sm,
+    fontWeight: Typography.semibold,
+    color: Colors.accent,
+    marginBottom: Spacing.xs,
+  },
+  supportedHint: {
+    fontSize: Typography.xs,
+    color: Colors.muted,
+    lineHeight: 18,
   },
   imageContainer: {
     width: '100%',

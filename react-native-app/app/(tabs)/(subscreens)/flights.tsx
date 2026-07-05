@@ -7,9 +7,9 @@ import { StatusBadge } from '../../../src/components/StatusBadge';
 import { AddButton } from '../../../src/components/AddButton';
 import { Toast } from '../../../src/components/Toast';
 import { useToast } from '../../../src/hooks/useToast';
-import { Flight } from '../../../src/store/types';
+import { Flight, TransportType, TRANSPORT_TYPES } from '../../../src/store/types';
 import { CommonModal, FormField, FormInput } from '../../../src/components/CommonModal';
-import { FLIGHT, EMPTY_STATE, TICKET_SCAN } from '../../../src/constants/strings';
+import { TRANSPORT, EMPTY_STATE, TICKET_SCAN } from '../../../src/constants/strings';
 import { TicketImagePicker } from '../../../src/components/TicketImagePicker';
 import { TicketScanResult } from '../../../src/components/TicketScanResult';
 import { TicketInfo } from '../../../src/utils/ticketOcr';
@@ -19,7 +19,8 @@ export default function FlightsScreen() {
   const { visible, message, showToast, hideToast } = useToast();
   const plan = getActivePlan();
   const [editItem, setEditItem] = useState<Flight | null>(null);
-  const [editAirline, setEditAirline] = useState('');
+  const [editType, setEditType] = useState<TransportType>('plane');
+  const [editCompany, setEditCompany] = useState('');
   const [editCode, setEditCode] = useState('');
   const [editRoute, setEditRoute] = useState('');
   const [editDep, setEditDep] = useState('');
@@ -42,8 +43,9 @@ export default function FlightsScreen() {
   };
 
   const handleAddFlight = () => {
-    const newFlight = {
+    const newFlight: Flight = {
       id: Date.now(),
+      type: 'plane',
       airline: '新航班',
       code: 'XX000',
       route: '出发→到达',
@@ -56,12 +58,13 @@ export default function FlightsScreen() {
       notes: {},
     };
     dispatch({ type: 'ADD_FLIGHT', payload: newFlight });
-    showToast(FLIGHT.ADD_SUCCESS);
+    showToast(TRANSPORT.ADD_SUCCESS);
   };
 
   const handleOpenEdit = (flight: Flight) => {
     setEditItem(flight);
-    setEditAirline(flight.airline);
+    setEditType(flight.type || 'plane');
+    setEditCompany(flight.airline);
     setEditCode(flight.code);
     setEditRoute(flight.route);
     setEditDep(flight.dep);
@@ -73,18 +76,19 @@ export default function FlightsScreen() {
   const handleSaveEdit = () => {
     if (!editItem) return;
     if (editDep && !isValidTime(editDep)) {
-      showToast(FLIGHT.INVALID_TIME);
+      showToast(TRANSPORT.INVALID_TIME);
       return;
     }
     if (editArr && !isValidTime(editArr)) {
-      showToast(FLIGHT.INVALID_TIME);
+      showToast(TRANSPORT.INVALID_TIME);
       return;
     }
     dispatch({
       type: 'UPDATE_FLIGHT',
       payload: {
         ...editItem,
-        airline: editAirline,
+        type: editType,
+        airline: editCompany,
         code: editCode,
         route: editRoute,
         dep: editDep,
@@ -94,15 +98,15 @@ export default function FlightsScreen() {
       },
     });
     setEditItem(null);
-    showToast(FLIGHT.EDIT_SUCCESS);
+    showToast(TRANSPORT.EDIT_SUCCESS);
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert(FLIGHT.DELETE_CONFIRM.split('？')[0], FLIGHT.DELETE_CONFIRM, [
+    Alert.alert(TRANSPORT.DELETE_CONFIRM.split('？')[0], TRANSPORT.DELETE_CONFIRM, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: () => {
         dispatch({ type: 'DELETE_FLIGHT', payload: id });
-        showToast(FLIGHT.DELETE_SUCCESS);
+        showToast(TRANSPORT.DELETE_SUCCESS);
       }},
     ]);
   };
@@ -141,19 +145,23 @@ export default function FlightsScreen() {
     showToast(TICKET_SCAN.ADD_SUCCESS);
   };
 
+  const getTransportLabel = (type: TransportType) => {
+    return TRANSPORT_TYPES[type]?.icon || '🚗';
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <BackHeader title="机票对比" />
+        <BackHeader title="交通方式对比" />
 
         <Text style={styles.hint}>
-          {FLIGHT.HINT}
+          {TRANSPORT.HINT}
         </Text>
 
         {plan.flights.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>{EMPTY_STATE.FLIGHT.TEXT}</Text>
-            <Text style={styles.emptyHint}>{EMPTY_STATE.FLIGHT.HINT}</Text>
+            <Text style={styles.emptyText}>{TRANSPORT.NO_DATA}</Text>
+            <Text style={styles.emptyHint}>{TRANSPORT.NO_DATA_HINT}</Text>
           </View>
         ) : (
           plan.flights.map((flight) => (
@@ -179,6 +187,8 @@ export default function FlightsScreen() {
                 </View>
               </TouchableOpacity>
 
+              <Text style={styles.transportIcon}>{getTransportLabel(flight.type || 'plane')}</Text>
+
               <View style={styles.flightInfo}>
                 <Text style={styles.airline}>
                   {flight.airline}{' '}
@@ -196,7 +206,7 @@ export default function FlightsScreen() {
             </View>
 
             <View style={styles.criteria}>
-              {FLIGHT.CRITERIA.map((criteria, index) => (
+              {TRANSPORT.CRITERIA.map((criteria, index) => (
                 <Text key={criteria} style={styles.criteriaItem}>
                   {criteria}: {flight.notes[index] || '—'}
                 </Text>
@@ -206,7 +216,7 @@ export default function FlightsScreen() {
         ))
         )}
 
-        <AddButton label={FLIGHT.ADD} onPress={handleAddFlight} />
+        <AddButton label={TRANSPORT.ADD} onPress={handleAddFlight} />
 
         <TouchableOpacity
           style={styles.scanButton}
@@ -222,64 +232,89 @@ export default function FlightsScreen() {
       {/* 编辑弹窗 - 使用公共Modal组件 */}
       <CommonModal
         visible={!!editItem}
-        title={FLIGHT.EDIT}
+        title={TRANSPORT.EDIT}
         onCancel={() => setEditItem(null)}
         onSave={handleSaveEdit}
       >
-        <FormField label={FLIGHT.AIRLINE}>
+        {/* 交通方式选择 */}
+        <FormField label={TRANSPORT.TYPE}>
+          <View style={styles.transportSelector}>
+            {(Object.keys(TRANSPORT_TYPES) as TransportType[]).map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.transportOption,
+                  editType === type && styles.transportOptionSelected,
+                ]}
+                onPress={() => setEditType(type)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.transportOptionIcon}>{TRANSPORT_TYPES[type].icon}</Text>
+                <Text style={[
+                  styles.transportOptionText,
+                  editType === type && styles.transportOptionTextSelected,
+                ]}>
+                  {TRANSPORT_TYPES[type].label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </FormField>
+
+        <FormField label={TRANSPORT.COMPANY}>
           <FormInput
-            value={editAirline}
-            onChangeText={setEditAirline}
-            placeholder={FLIGHT.AIRLINE_PLACEHOLDER}
+            value={editCompany}
+            onChangeText={setEditCompany}
+            placeholder={TRANSPORT.COMPANY_PLACEHOLDER}
           />
         </FormField>
 
-        <FormField label={FLIGHT.CODE}>
+        <FormField label={TRANSPORT.CODE}>
           <FormInput
             value={editCode}
             onChangeText={setEditCode}
-            placeholder={FLIGHT.CODE_PLACEHOLDER}
+            placeholder={TRANSPORT.CODE_PLACEHOLDER}
           />
         </FormField>
 
-        <FormField label={FLIGHT.ROUTE}>
+        <FormField label={TRANSPORT.ROUTE}>
           <FormInput
             value={editRoute}
             onChangeText={setEditRoute}
-            placeholder={FLIGHT.ROUTE_PLACEHOLDER}
+            placeholder={TRANSPORT.ROUTE_PLACEHOLDER}
           />
         </FormField>
 
-        <FormField label={FLIGHT.DEP_TIME}>
+        <FormField label={TRANSPORT.DEP_TIME}>
           <FormInput
             value={editDep}
             onChangeText={setEditDep}
-            placeholder={FLIGHT.DEP_PLACEHOLDER}
+            placeholder={TRANSPORT.DEP_PLACEHOLDER}
           />
         </FormField>
 
-        <FormField label={FLIGHT.ARR_TIME}>
+        <FormField label={TRANSPORT.ARR_TIME}>
           <FormInput
             value={editArr}
             onChangeText={setEditArr}
-            placeholder={FLIGHT.ARR_PLACEHOLDER}
+            placeholder={TRANSPORT.ARR_PLACEHOLDER}
           />
         </FormField>
 
-        <FormField label={FLIGHT.PRICE}>
+        <FormField label={TRANSPORT.PRICE}>
           <FormInput
             value={editPrice}
             onChangeText={setEditPrice}
-            placeholder={FLIGHT.PRICE_PLACEHOLDER}
+            placeholder={TRANSPORT.PRICE_PLACEHOLDER}
             keyboardType="numeric"
           />
         </FormField>
 
-        <FormField label={FLIGHT.CLASS}>
+        <FormField label={TRANSPORT.CLASS}>
           <FormInput
             value={editCls}
             onChangeText={setEditCls}
-            placeholder={FLIGHT.CLASS_PLACEHOLDER}
+            placeholder={TRANSPORT.CLASS_PLACEHOLDER}
           />
         </FormField>
       </CommonModal>
@@ -362,6 +397,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: Typography.bold,
   },
+  transportIcon: {
+    fontSize: 24,
+  },
   flightInfo: {
     flex: 1,
   },
@@ -416,5 +454,35 @@ const styles = StyleSheet.create({
   scanButtonText: {
     fontSize: Typography.base,
     color: Colors.fg2,
+  },
+  transportSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  transportOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.sm,
+    backgroundColor: Colors.surface,
+  },
+  transportOptionSelected: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  transportOptionIcon: {
+    fontSize: 16,
+    marginRight: Spacing.xs,
+  },
+  transportOptionText: {
+    fontSize: Typography.sm,
+    color: Colors.fg,
+  },
+  transportOptionTextSelected: {
+    color: Colors.surface,
   },
 });

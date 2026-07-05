@@ -66,9 +66,23 @@ export interface Plan {
   checklistItems: ChecklistItem[];
 }
 
-// 航班类型
+// 交通方式类型
+export type TransportType = 'plane' | 'train' | 'highspeed' | 'taxi' | 'bus' | 'other';
+
+// 交通方式配置
+export const TRANSPORT_TYPES: Record<TransportType, { label: string; icon: string }> = {
+  plane: { label: '飞机', icon: '✈️' },
+  train: { label: '火车', icon: '🚂' },
+  highspeed: { label: '高铁', icon: '🚄' },
+  taxi: { label: '打车', icon: '🚕' },
+  bus: { label: '大巴', icon: '🚌' },
+  other: { label: '其他', icon: '🚗' },
+};
+
+// 航班类型（交通方式）
 export interface Flight {
   id: number;
+  type: TransportType;
   airline: string;
   code: string;
   route: string;
